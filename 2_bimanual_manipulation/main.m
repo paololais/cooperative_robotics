@@ -52,19 +52,17 @@ arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
 %Define Tasks, input values(Robot type(L,R,BM), Task Name)
+left_tool_task=tool_task("L","LT");
+right_tool_task=tool_task("R","RT");
 ee_alt_L = ee_min_altitude_task("L","EE_ALT_L");
 ee_alt_R = ee_min_altitude_task("R","EE_ALT_R");
-
 jl_L = joint_limits_task("L","JL_L");
 jl_R = joint_limits_task("R","JL_R");
 
-left_tool_task=tool_task("L","LT");
-right_tool_task=tool_task("R","RT");
-
 %Actions for each phase: go to phase, coop_motion phase, end_motion phase
 go_to = {
-    %ee_alt_L, ee_alt_R, ...      % highest priority (safety)
-    %jl_L, jl_R, ...              % safety joint limits
+    ee_alt_L, ee_alt_R, ...      % highest priority (safety)
+    jl_L, jl_R, ...              % safety joint limits
     left_tool_task, right_tool_task
 };
 %Load Action Manager Class and load actions

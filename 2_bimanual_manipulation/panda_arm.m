@@ -71,7 +71,7 @@ classdef panda_arm < handle
         function setGoal(obj,obj_position,obj_orientation,arm_dist_offset,arm_rot_offset)
             % Set goal positions and orientations for arm 
             obj.wTo=[[obj_orientation obj_position]; 0 0 0 1];
-            obj.wTg=[[arm_rot_offset arm_dist_offset]; 0 0 0 1];
+            obj.wTg=obj.wTo*[[arm_rot_offset arm_dist_offset]; 0 0 0 1];
         end
         
         function set_obj_goal(obj,wTog)
@@ -84,8 +84,8 @@ classdef panda_arm < handle
             % Compute forward kinematics of the robot
             obj.bTe=getTransform(obj.robot_model.franka,[obj.q',0,0],'panda_link7');
             obj.wTe=obj.wTb*obj.bTe;
-            obj.wTt = obj.wTe * obj.eTt;
-            obj.alt = obj.wTt(3,4);           
+            obj.wTt=obj.wTe*obj.eTt;
+            obj.alt=obj.wTt(3,4); % update altitude
         end
         function update_jacobian(obj)
             % Compute Differential kinematics from the base frame to the
