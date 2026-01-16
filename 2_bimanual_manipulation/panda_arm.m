@@ -94,5 +94,21 @@ classdef panda_arm < handle
             Ste = [eye(3) zeros(3); -skew(obj.wTe(1:3,1:3)*obj.eTt(1:3,4)) eye(3)];
             obj.wJt = Ste * [obj.wTb(1:3,1:3) zeros(3,3); zeros(3,3) obj.wTb(1:3,1:3)] * bJe(:, 1:7);
         end
+
+        function compute_object_frame(obj)
+            % Define the object frame as a rigid body attached to the tool frame
+            % This is computed when grasping points are reached
+            % The transformation from tool frame to object frame is fixed
+            % For this bimanual grasp, each arm grasps the object at its tool frame
+            % So the object frame coincides with the grasping point
+            obj.tTo = eye(4);  % Tool frame IS the grasping point on object
+            obj.wTo = obj.wTt * obj.tTo;  % Object frame in world coordinates
+        end
+
+        function update_object_jacobian(obj)
+            % Update the Jacobian from arm joint velocities to object frame velocity
+            % Since tTo is fixed (identity for this grasp), the object Jacobian equals tool Jacobian
+            obj.wJo = obj.wJt;  % Object Jacobian = Tool Jacobian (same contribution)
+        end
     end
 end
