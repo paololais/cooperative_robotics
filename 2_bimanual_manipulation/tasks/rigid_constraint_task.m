@@ -1,9 +1,9 @@
-classdef bimanual_constraint_task < Task
+classdef rigid_constraint_task < Task
     % Bimanual rigid grasp kinematic constraint
     % Enforces: J_oL*qdot_L - J_oR*qdot_R = 0
 
     methods
-        function obj = bimanual_constraint_task(taskID)
+        function obj = rigid_constraint_task(taskID)
             obj.task_name = taskID;
         end
         

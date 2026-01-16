@@ -29,7 +29,7 @@ classdef MissionManager < handle
                         max(angle_error_L, angle_error_R) < obj.ang_threshold && ...
                         ~obj.phase_rigid_constraint_flag
                     % TRANSITION TO PHASE 2: Grasping points reached
-                    disp("Go To Position complete - Rigid Constraint Phase starts");
+                    disp("Go To Position completed - Bimanual Manipulation starts");
 
                     % (a) Define the object frame at grasping point
                     % Compute object frame for both arms (should be identical if grasp is symmetric)
@@ -51,12 +51,12 @@ classdef MissionManager < handle
                     % Set binary transition (no smoothness) for rigid constraint
                     actionManager.setBinaryTransition(true);
 
-                    % Switch to Bimanual Rigid Constraint phase
-                    actionManager.setCurrentAction("Bimanual Rigid Constraint");
+                    % Switch to Bimanual Manipulation phase
+                    actionManager.setCurrentAction("Bimanual Manipulation");
 
                     obj.phase_rigid_constraint_flag = true;
                 end
-            elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Bimanual Rigid Constraint")
+            elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Bimanual Manipulation")
                 % PHASE 2: Rigid body grasping and object movement
                 % Update object frame continuously for rigid body tracking
                 bm_sim.left_arm.update_object_jacobian();
@@ -76,6 +76,8 @@ classdef MissionManager < handle
                     fprintf("Goal object position:  [%.3f, %.3f, %.3f]\n", ...
                         bm_sim.left_arm.wTog(1,4), bm_sim.left_arm.wTog(2,4), bm_sim.left_arm.wTog(3,4));
 
+                    disp("Bimanual Manipulation completed - Stop Motion starts");
+                    
                     actionManager.setBinaryTransition(false);
                     actionManager.setCurrentAction("Stop Motion");
                     obj.phase_stop_motion_flag = true;                    
