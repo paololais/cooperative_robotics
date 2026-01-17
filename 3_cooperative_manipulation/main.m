@@ -18,7 +18,10 @@ real_robot = false;
 %Initiliaze panda_arm() Class, specifying the base offset w.r.t World Frame
 arm1=panda_arm(model,eye(4));
 %TO DO: TRANSFORMATION MATRIX FROM WORLD FRAME TO RIGHT ARM BASE FRAME
-wTb2 =eye(4);
+wTb2 =[-1 0 0  1.06;
+       0 -1 0  -0.01;
+       0 0  1   0;
+       0 0  0   1];
 arm2=panda_arm(model,wTb2);
 
 %Initialize Cooperative Simulator Class
@@ -31,8 +34,10 @@ w_obj_ori = rotation(0,0,0);
 
 %Set goal frames for left and right arm, based on object frame
 %TO DO: Set arm goal frame based on object frame.
-arm1.setGoal(w_obj_pos,w_obj_ori,w_obj_pos,rotation(0, 0, 0));
-arm2.setGoal(w_obj_pos,w_obj_ori,w_obj_pos,rotation(0, 0, 0));
+offset = (obj_length/2) - 0.005;
+arm_dist_offset = [offset 0 0]';
+arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/6, 0));    
+arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0));
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.6, -0.4, 0.48]'; 0 0 0 1];
