@@ -17,10 +17,10 @@ classdef ee_min_altitude_task < Task
                 robot=robot_system.right_arm;    
             end
             
-            error = 0.15 - robot.alt; % minimum altitude = 0.15m
-            obj.xdotbar = 0.6 * max(error, 0); % only push upward
+            error = 0.2 - robot.alt; % minimum altitude = 0.2m
+            obj.xdotbar = 1.3 * error;         
             % limit the requested velocities...
-            obj.xdotbar = Saturate(obj.xdotbar, 0.3);
+            obj.xdotbar = Saturate(obj.xdotbar, 1.0);
         end
 
         function updateJacobian(obj,robot_system)
@@ -46,9 +46,7 @@ classdef ee_min_altitude_task < Task
             end
 
             alt = robot.alt;
-            % start activating when alt < 0.18m, 
-            % fully active when alt <= 0.15m
-            obj.A = DecreasingBellShapedFunction(0.15, 0.18, 0, 1, alt);
+            obj.A = DecreasingBellShapedFunction(0.2, 0.25, 0, 1, alt);
         end
     end
 end

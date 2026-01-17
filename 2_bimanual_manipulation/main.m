@@ -57,30 +57,30 @@ jl_R = joint_limits_task("R","JL_R");
 
 % Bimanual Rigid Constraint Tasks
 rigid_constraint = rigid_constraint_task("RIGID_CONSTRAINT");
-object_task = object_motion_task("OBJECT_MOTION");
+object_task_l = object_motion_task("L","OBJECT_MOTION_L");
+object_task_r = object_motion_task("R","OBJECT_MOTION_R");
 
-% Stop Velocities Tasks
+% Stop Motion Tasks
 stop_velocities_task_L = stop_velocities_task("L","STOP_VEL_L");
 stop_velocities_task_R = stop_velocities_task("R","STOP_VEL_R");
-ee_alt_L2 = ee_min_altitude_task("L","EE_ALT_L2");
-ee_alt_R2 = ee_min_altitude_task("R","EE_ALT_R2");
-
 
 %Actions for each phase: go to phase, coop_motion phase, end_motion phase
 go_to = {ee_alt_L, ee_alt_R, jl_L, jl_R, left_tool_task, right_tool_task};
-bimanual_manipulation = {rigid_constraint, object_task};
-stop_motion = {ee_alt_R2, ee_alt_L2, stop_velocities_task_R, stop_velocities_task_L};
+bimanual_manipulation = {rigid_constraint, ee_alt_L, ee_alt_R, jl_L, jl_R, object_task_l, object_task_r};
+stop_motion = {ee_alt_L, ee_alt_R, stop_velocities_task_R, stop_velocities_task_L};
 
 % Unifying task list
 unified_task_list = {rigid_constraint, ee_alt_L, ee_alt_R, jl_L, jl_R, ...
-                     left_tool_task, right_tool_task, object_task};
-
+                     left_tool_task, right_tool_task, object_task_l, object_task_r, ...
+                     stop_velocities_task_R, stop_velocities_task_L};
 %Load Action Manager Class and load actions
 actionManager = ActionManager();
 actionManager.addAction(go_to, "Go To Position");
 actionManager.addAction(bimanual_manipulation, "Bimanual Manipulation");
-actionManager.addAction(stop_motion, "Stop Motions");
+actionManager.addAction(stop_motion, "Stop Motion");
 actionManager.addUnifyingTaskList(unified_task_list);
+
+disp(actionManager.actionsName)
 
 % Track mission phases
 missionManager = MissionManager();
@@ -118,7 +118,7 @@ for t = 0:dt:end_time
 
     % 6. Lggging
     logger.update(bm_sim.time,bm_sim.loopCounter)
-    bm_sim.time
+    bm_sim.time;
     % 7. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end

@@ -61,11 +61,6 @@ classdef panda_arm < handle
                        0            0         1     tool_length;
                        0            0         0     1];
             obj.wTt = obj.wTe * obj.eTt;
-
-            % Initialize tTo, wTo and wJo to avoid dimension problems at startup
-            obj.tTo = zeros(4,4);
-            obj.wTo = zeros(4,4);
-            obj.wJo = zeros(6,7);   
         end
 
         function setGoal(obj,obj_position,obj_orientation,arm_dist_offset,arm_rot_offset)
@@ -86,6 +81,9 @@ classdef panda_arm < handle
             obj.wTe=obj.wTb*obj.bTe;
             obj.wTt=obj.wTe*obj.eTt;
             obj.alt=obj.wTt(3,4); % update altitude
+            if(~isempty(obj.tTo))
+                obj.wTo = obj.wTt * obj.tTo;
+            end
         end
         function update_jacobian(obj)
             % Compute Differential kinematics from the base frame to the
@@ -97,18 +95,7 @@ classdef panda_arm < handle
 
         function compute_object_frame(obj)
             % Define the object frame as a rigid body attached to the tool frame
-            % This is computed when grasping points are reached
-            % The transformation from tool frame to object frame is fixed
-            % For this bimanual grasp, each arm grasps the object at its tool frame
-            % So the object frame coincides with the grasping point
-            obj.tTo = eye(4);  % Tool frame IS the grasping point on object
-            obj.wTo = obj.wTt * obj.tTo;  % Object frame in world coordinates
-        end
-
-        function update_object_jacobian(obj)
-            % Update the Jacobian from arm joint velocities to object frame velocity
-            % Since tTo is fixed (identity for this grasp), the object Jacobian equals tool Jacobian
-            obj.wJo = obj.wJt;  % Object Jacobian = Tool Jacobian (same contribution)
+            obj.tTo = obj.wTt \ obj.wTo;  % tTo = wTt^-1 * wTo
         end
     end
 end

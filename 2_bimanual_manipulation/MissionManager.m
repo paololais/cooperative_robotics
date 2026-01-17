@@ -31,18 +31,13 @@ classdef MissionManager < handle
                     % TRANSITION TO PHASE 2: Grasping points reached
                     disp("Go To Position completed - Bimanual Manipulation starts");
 
-                    % (a) Define the object frame at grasping point
-                    % Compute object frame for both arms (should be identical if grasp is symmetric)
+                    % Define the object frame at grasping point
                     bm_sim.left_arm.compute_object_frame();
                     bm_sim.right_arm.compute_object_frame();
 
-                    % Update object Jacobians for rigid body control
-                    bm_sim.left_arm.update_object_jacobian();
-                    bm_sim.right_arm.update_object_jacobian();
-
                     % Store object pose for reference
                     obj_world_pose = bm_sim.left_arm.wTo;
-                    fprintf("Object frame computed at position: [%.3f, %.3f, %.3f]\n", ...
+                    fprintf("Object frame at position: [%.3f, %.3f, %.3f]\n", ...
                         obj_world_pose(1,4), obj_world_pose(2,4), obj_world_pose(3,4));
 
                     fprintf("Object goal position set to: [%.3f, %.3f, %.3f]\n", ...
@@ -50,26 +45,15 @@ classdef MissionManager < handle
 
                     % Set binary transition (no smoothness) for rigid constraint
                     actionManager.setBinaryTransition(true);
-
-                    % Switch to Bimanual Manipulation phase
                     actionManager.setCurrentAction("Bimanual Manipulation");
-
                     obj.phase_rigid_constraint_flag = true;
                 end
             elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Bimanual Manipulation")
                 % PHASE 2: Rigid body grasping and object movement
-                % Update object frame continuously for rigid body tracking
-                bm_sim.left_arm.update_object_jacobian();
-                bm_sim.right_arm.update_object_jacobian();
-
-                obj_world_pose = bm_sim.left_arm.wTo;
-                    fprintf("Object frame computed at position: [%.3f, %.3f, %.3f]\n", ...
-                        obj_world_pose(1,4), obj_world_pose(2,4), obj_world_pose(3,4));
-
                 % Check if object reached goal position
                 object_pos_error = norm(bm_sim.left_arm.wTo(1:3,4) - bm_sim.left_arm.wTog(1:3,4));
-
-                if object_pos_error < 0.05 && ~obj.phase_stop_motion_flag
+                %fprintf("Object position error: %.3f\n", object_pos_error);
+                if object_pos_error < 0.01 && ~obj.phase_stop_motion_flag
                     disp("Object reached goal position!");
                     fprintf("Final object position: [%.3f, %.3f, %.3f]\n", ...
                         bm_sim.left_arm.wTo(1,4), bm_sim.left_arm.wTo(2,4), bm_sim.left_arm.wTo(3,4));

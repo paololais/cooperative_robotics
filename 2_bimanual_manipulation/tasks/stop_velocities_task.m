@@ -14,8 +14,7 @@ classdef stop_velocities_task < Task
             elseif(obj.ID=='R')
                 robot=robot_system.right_arm;   
             end
-
-            obj.xdotbar = zeros(7, 1);
+            
             target_qdot = zeros(7, 1);
             error = target_qdot - robot.qdot; 
             obj.xdotbar = 0.2 * error;

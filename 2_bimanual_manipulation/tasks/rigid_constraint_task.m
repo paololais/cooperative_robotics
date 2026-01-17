@@ -8,24 +8,19 @@ classdef rigid_constraint_task < Task
         end
         
         function updateReference(obj, robot_system)
-            % Rigid constraint → zero reference (6D)
+            % Rigid constraint - zero reference
             obj.xdotbar = zeros(6,1);
         end
         
-        function updateJacobian(obj, robot_system)
-            left_arm  = robot_system.left_arm;
-            right_arm = robot_system.right_arm;
-            
+        function updateJacobian(obj, robot_system)        
             % Object-frame Jacobians
-            J_oL = left_arm.wJo;   % 6x7
-            J_oR = right_arm.wJo;  % 6x7
-            
-            % Rigid grasp constraint Jacobian (6x14)
-            obj.J = [J_oL, -J_oR];
+            J_L = robot_system.left_arm.wJt;  
+            J_R = robot_system.right_arm.wJt;              
+            obj.J = [J_L, -J_R];
         end
         
         function updateActivation(obj, robot_system)
-            % Physical constraint → always active
+            % Physical constraint - always active
             obj.A = eye(6);
         end
     end

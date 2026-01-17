@@ -2,23 +2,21 @@ classdef object_motion_task < Task
     % Object Cartesian motion task (after grasp)
 
     methods
-        function obj = object_motion_task(taskID)
+        function obj = object_motion_task(robot_ID,taskID)
+            obj.ID=robot_ID;
             obj.task_name = taskID;
         end
         
         function updateReference(obj, robot_system)
-            % Use LEFT arm as object pose reference
-            left_arm = robot_system.left_arm;
-
-            % Current and desired object pose
-            wTo  = left_arm.wTo;
-            wTog = left_arm.wTog;
-
-            % Cartesian error
-            [v_ang, v_lin] = CartError(wTog, wTo);
+            if(obj.ID=='L')
+                robot=robot_system.left_arm;
+            elseif(obj.ID=='R')
+                robot=robot_system.right_arm;
+            end
+            [v_ang, v_lin] = CartError(robot.wTog, robot.wTo);
 
             % Desired object velocity
-            obj.xdotbar = [v_ang; v_lin];
+            obj.xdotbar = 0.2*[v_ang; v_lin];
 
             % Saturation
             obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.3);
@@ -26,11 +24,17 @@ classdef object_motion_task < Task
         end
         
         function updateJacobian(obj, robot_system)
-            % Object Jacobian: both arms contribute
-            JL = robot_system.left_arm.wJo;
-            JR = robot_system.right_arm.wJo;
-
-            obj.J = [JL, JR];   % 6x14
+            if(obj.ID=='L')
+                robot=robot_system.left_arm;
+            elseif(obj.ID=='R')
+                robot=robot_system.right_arm;    
+            end
+            tool_jacobian=robot.wJt;
+            if obj.ID=='L'
+                obj.J=[tool_jacobian, zeros(6, 7)];
+            elseif obj.ID=='R'
+                obj.J=[zeros(6, 7), tool_jacobian];
+            end
         end
         
         function updateActivation(obj, robot_system)
