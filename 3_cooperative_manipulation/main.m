@@ -36,8 +36,8 @@ w_obj_ori = rotation(0,0,0);
 %TO DO: Set arm goal frame based on object frame.
 offset = (obj_length/2) - 0.005;
 arm_dist_offset = [offset 0 0]';
-arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/6, 0));    
-arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0));
+arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/9, 0));    
+arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0));
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.6, -0.4, 0.48]'; 0 0 0 1];
@@ -53,9 +53,23 @@ right_tool_task=tool_task("R","RT");
 go_to_left={left_tool_task};
 go_to_right={right_tool_task};
 
+unifiedTasksL={left_tool_task};
+unifiedTasksR={right_tool_task};
+
 %TO DO: Create two action manager objects to manage the tasks of a single
 %manipulator (one for the non-cooperative and one for the cooperative steps
 %of the algorithm)
+actionManagerL = ActionManager();
+actionManagerL.addAction(go_to_left, "Go To Left");
+actionManagerL.addUnifyingTaskList(unifiedTasksL);
+disp('Left Action Manager actions:');
+disp(actionManagerL.actionsName);
+
+actionManagerR = ActionManager();
+actionManagerR.addAction(go_to_right, "Go To Right");
+actionManagerR.addUnifyingTaskList(unifiedTasksR);
+disp('Right Action Manager actions:');
+disp(actionManagerR.actionsName);
 
 %Initiliaze robot interface
 robot_udp=UDP_interface(real_robot);
@@ -76,10 +90,12 @@ for t = 0:dt:end_time
     
     % 3. TO DO: compute the TPIK for each manipulator with your action
     % manager
+    [ql_dot]=actionManagerL.computeICAT(coop_system, dt);
+    [qr_dot]=actionManagerR.computeICAT(coop_system, dt);
 
     % 4. TO DO: COOPERATION hierarchy
     % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
-
+    
     % 5. TO DO: compute the TPIK for each manipulator with your action
     % manager (with the constrained action to track the coop velocity)
 

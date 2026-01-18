@@ -15,9 +15,8 @@ classdef stop_velocities_task < Task
                 robot=robot_system.right_arm;   
             end
             
-            target_qdot = zeros(7, 1);
-            error = target_qdot - robot.qdot; 
-            obj.xdotbar = 0.2 * error;
+            error = zeros(7, 1) - robot.qdot; % desired velocity is zero
+            obj.xdotbar = 0.5 * error;
 
             % limit the requested velocities
             obj.xdotbar = Saturate(obj.xdotbar, 0.3);

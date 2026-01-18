@@ -3,7 +3,8 @@ classdef rigid_constraint_task < Task
     % Enforces: J_oL*qdot_L - J_oR*qdot_R = 0
 
     methods
-        function obj = rigid_constraint_task(taskID)
+        function obj = rigid_constraint_task(robotID, taskID)
+            obj.ID = robotID;
             obj.task_name = taskID;
         end
         

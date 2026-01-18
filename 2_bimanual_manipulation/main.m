@@ -56,7 +56,7 @@ jl_L = joint_limits_task("L","JL_L");
 jl_R = joint_limits_task("R","JL_R");
 
 % Bimanual Rigid Constraint Tasks
-rigid_constraint = rigid_constraint_task("RIGID_CONSTRAINT");
+rigid_constraint = rigid_constraint_task("BM", "RIGID_CONSTRAINT");
 object_task_l = object_motion_task("L","OBJECT_MOTION_L");
 object_task_r = object_motion_task("R","OBJECT_MOTION_R");
 

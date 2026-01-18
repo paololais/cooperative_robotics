@@ -1,5 +1,4 @@
-classdef ee_min_altitude_task < Task   
-    %Tool position control for a single arm
+classdef ee_min_altitude_task < Task
     properties
 
     end
@@ -17,8 +16,8 @@ classdef ee_min_altitude_task < Task
                 robot=robot_system.right_arm;    
             end
             
-            error = 0.2 - robot.alt; % minimum altitude = 0.2m
-            obj.xdotbar = 1.3 * error;         
+            error = 0.15 - robot.alt; % minimum altitude = 0.15m
+            obj.xdotbar = 1.0 * error;         
             % limit the requested velocities...
             obj.xdotbar = Saturate(obj.xdotbar, 1.0);
         end
@@ -46,7 +45,7 @@ classdef ee_min_altitude_task < Task
             end
 
             alt = robot.alt;
-            obj.A = DecreasingBellShapedFunction(0.2, 0.25, 0, 1, alt);
+            obj.A = DecreasingBellShapedFunction(0.15, 0.2, 0, 1, alt);
         end
     end
 end

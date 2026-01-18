@@ -83,7 +83,8 @@ classdef panda_arm < handle
             obj.bTe=getTransform(obj.robot_model.franka,[obj.q',0,0],'panda_link7');
             obj.wTe=obj.wTb*obj.bTe;
             %TO DO: Update the transformation from world frame to Tool frame
-            obj.wTt = obj.wTe*obj.eTt;            
+            obj.wTt = obj.wTe*obj.eTt;
+            obj.alt = obj.wTe(3,4); %Update altitude 
         end
         function update_jacobian(obj)
             % Compute Differential kinematics from the base frame to the
