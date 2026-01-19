@@ -1,6 +1,6 @@
 classdef MissionManager < handle
     properties
-        pos_threshold = 0.05;   % meters
+        pos_threshold = 0.01;   % meters
         ang_threshold = 0.1;    % radians (approximately 5.7 degrees)
         % flags for phase transition
         phase_rigid_constraint_flag = false;
@@ -53,7 +53,7 @@ classdef MissionManager < handle
                 % Check if object reached goal position
                 object_pos_error = norm(bm_sim.left_arm.wTo(1:3,4) - bm_sim.left_arm.wTog(1:3,4));
                 %fprintf("Object position error: %.3f\n", object_pos_error);
-                if object_pos_error < 0.01 && ~obj.phase_stop_motion_flag
+                if object_pos_error < obj.pos_threshold && ~obj.phase_stop_motion_flag
                     disp("Object reached goal position!");
                     fprintf("Final object position: [%.3f, %.3f, %.3f]\n", ...
                         bm_sim.left_arm.wTo(1,4), bm_sim.left_arm.wTo(2,4), bm_sim.left_arm.wTo(3,4));
