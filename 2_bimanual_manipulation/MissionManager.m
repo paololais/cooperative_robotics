@@ -28,6 +28,7 @@ classdef MissionManager < handle
                 if max(arm1_pos_error, arm2_pos_error) < obj.pos_threshold && ...
                         max(angle_error_L, angle_error_R) < obj.ang_threshold && ...
                         ~obj.phase_rigid_constraint_flag
+                    disp("Arms reached grasping points!");
                     % TRANSITION TO PHASE 2: Grasping points reached
                     disp("Go To Position completed - Bimanual Manipulation starts");
 
@@ -57,8 +58,6 @@ classdef MissionManager < handle
                     disp("Object reached goal position!");
                     fprintf("Final object position: [%.3f, %.3f, %.3f]\n", ...
                         bm_sim.left_arm.wTo(1,4), bm_sim.left_arm.wTo(2,4), bm_sim.left_arm.wTo(3,4));
-                    fprintf("Goal object position:  [%.3f, %.3f, %.3f]\n", ...
-                        bm_sim.left_arm.wTog(1,4), bm_sim.left_arm.wTog(2,4), bm_sim.left_arm.wTog(3,4));
 
                     disp("Bimanual Manipulation completed - Stop Motion starts");
                     
