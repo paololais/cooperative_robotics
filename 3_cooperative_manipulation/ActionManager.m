@@ -33,8 +33,9 @@ classdef ActionManager < handle
             % Smooth: Bell-shaped function transition over transitionTime
             obj.isBinaryTransition = isBinary;
         end
-
-        function [ydotbar] = computeICAT(obj, bm_system, dt)
+        
+        % Non-cooperative TPIK
+        function [ydotbar] = computeICATnc(obj, robot, dt)
              % Update time
             obj.timeSinceSwitch = obj.timeSinceSwitch + dt;
             t = obj.timeSinceSwitch;
@@ -54,9 +55,9 @@ classdef ActionManager < handle
             for i = 1:length(unifiedTasks)
                 task = unifiedTasks{i};
         
-                task.updateReference(bm_system);
-                task.updateJacobian(bm_system);
-                task.updateActivation(bm_system);
+                task.updateReference(robot);
+                task.updateJacobian(robot);
+                task.updateActivation(robot);
         
                 if obj.isBinaryTransition
                     % Binary transition: immediate 0 to 1 switch
@@ -85,8 +86,9 @@ classdef ActionManager < handle
             end
             
             % 2. Perform ICAT (task-priority inverse kinematics) for the current Action
-            ydotbar = zeros(14,1);
-            Qp = eye(14);
+            nJ = length(robot.q); % number of joints
+            ydotbar = zeros(nJ,1);
+            Qp = eye(nJ);
             for i = 1:length(tasks)
                  % TRANSITION FROM PREVIOUS ACTION SET TO NEXT ACTION SET
                 [Qp, ydotbar] = iCAT_task(tasks{i}.A, tasks{i}.J, ...
@@ -94,7 +96,7 @@ classdef ActionManager < handle
                                            1e-4, 0.01, 10);
             end
             % 3. Last task: residual damping
-            [~, ydotbar] = iCAT_task(eye(14), eye(14), Qp, ydotbar, zeros(14,1), 1e-4, 0.01, 10);
+            [~, ydotbar] = iCAT_task(eye(nJ), eye(nJ), Qp, ydotbar, zeros(nJ,1), 1e-4, 0.01, 10);
         end
 
         function setCurrentAction(obj, action_name)           

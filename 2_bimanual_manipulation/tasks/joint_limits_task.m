@@ -25,10 +25,12 @@ classdef joint_limits_task < Task
             k = 0.5;
             qdot_ref = zeros(7,1);
 
-            for i = 1:7
+            for i = 1:7                
                 if q(i) < qmin(i) + margin
+                    fprintf("Joint limits min exceeded for joint %d with value=%f\n", i, q(i));
                     qdot_ref(i) =  k * (qmin(i) + margin - q(i));
                 elseif q(i) > qmax(i) - margin
+                    fprintf("Joint limits max exceeded for joint %d with value=%f\n", i, q(i));
                     qdot_ref(i) = -k * (q(i) - (qmax(i) - margin));
                 end
             end

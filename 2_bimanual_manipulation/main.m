@@ -38,8 +38,9 @@ w_obj_ori = rotation(0,0,0);
 % Goal frames are at +-obj_length/2 (with an offset to take the obj not exactly at the extremes) along its x-axis
 offset = (obj_length/2) - 0.01;
 arm_dist_offset = [offset 0 0]';
-arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/6, 0));    
-arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0));
+arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/6, 0));
+% We take into account that the right arm is rotated of 180 degrees along z w.r.t left arm
+arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.65, -0.35, 0.28]'; 0 0 0 1];

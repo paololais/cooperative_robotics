@@ -52,7 +52,7 @@ classdef panda_arm < handle
 
             % FIXED END EFFECTOR
             theta = deg2rad(-44.9949);  % FIXED ANGLE BETWEEN EE AND TOOL
-            tool_length = 0.2104;       % FIXED DISTANCE BETWEEN EE AND TOOL
+            tool_length = 0.2124;       % FIXED DISTANCE BETWEEN EE AND TOOL
 
             % TO DO: Define tranformation matrix from ee to tool, and
             % transformation from world frame to tool

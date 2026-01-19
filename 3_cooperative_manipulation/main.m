@@ -6,8 +6,8 @@ addpath('./icat')
 addpath('./tasks')
 clc;clear;close all; 
 %Simulation Parameters
-dt = 0.005;
-end_time = 20;
+dt = 0.01;
+end_time = 15;
 
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
@@ -37,7 +37,7 @@ w_obj_ori = rotation(0,0,0);
 offset = (obj_length/2) - 0.005;
 arm_dist_offset = [offset 0 0]';
 arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/9, 0));    
-arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0));
+arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.6, -0.4, 0.48]'; 0 0 0 1];
@@ -90,8 +90,8 @@ for t = 0:dt:end_time
     
     % 3. TO DO: compute the TPIK for each manipulator with your action
     % manager
-    [ql_dot]=actionManagerL.computeICAT(coop_system, dt);
-    [qr_dot]=actionManagerR.computeICAT(coop_system, dt);
+    [ql_dot]=actionManagerL.computeICATnc(coop_system.left_arm, dt);
+    [qr_dot]=actionManagerR.computeICATnc(coop_system.right_arm, dt);
 
     % 4. TO DO: COOPERATION hierarchy
     % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
