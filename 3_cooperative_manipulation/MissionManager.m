@@ -59,7 +59,7 @@ classdef MissionManager < handle
                 % PHASE 2: Rigid body grasping and object movement
                 % Check if object reached goal position
                 object_pos_error = norm(coop_system.left_arm.wTo(1:3,4) - coop_system.left_arm.wTog(1:3,4));
-                fprintf("Object position error: %.3f\n", object_pos_error);
+                %fprintf("Object position error: %.3f\n", object_pos_error); % debug print
                 if object_pos_error < obj.pos_threshold && ~obj.phase_stop_motion_flag
                     disp("Object reached goal position!");
                     fprintf("Final object position: [%.3f, %.3f, %.3f]\n", ...

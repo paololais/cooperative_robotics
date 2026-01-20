@@ -63,8 +63,8 @@ stop_velocities_task_R = stop_velocities_task("R","STOP_VEL_R");
 go_to_left={ee_alt_L, jl_L, left_tool_task};
 go_to_right={ee_alt_R, jl_R, right_tool_task};
 
-coop_manipulation_L={jl_L, object_task_L};
-coop_manipulation_R={jl_R, object_task_R};
+coop_manipulation_L={ee_alt_L, jl_L, object_task_L};
+coop_manipulation_R={ee_alt_R, jl_R, object_task_R};
 
 stop_motion_L = {ee_alt_L, stop_velocities_task_L};
 stop_motion_R = {ee_alt_R, stop_velocities_task_R};
@@ -94,14 +94,15 @@ actionManagerR.addUnifyingTaskList(unifiedTasksR);
 disp('Right Action Manager actions:');
 disp(actionManagerR.actionsName);
 
-% cooperative action manager for both arms during rigid grasping
+% cooperative action manager for both arms during Cooperative Manipulation action
+% same tasks but with the cooperative tool velocity task with top priority
 actionManagerL_coop = ActionManager();
-actionManagerL_coop.addAction({coop_tool_velocity_L, jl_L, object_task_L}, "feasible vel Left");
-actionManagerL_coop.addUnifyingTaskList({coop_tool_velocity_L, jl_L, object_task_L});
+actionManagerL_coop.addAction({coop_tool_velocity_L, ee_alt_L, jl_L, object_task_L}, "feasible vel Left");
+actionManagerL_coop.addUnifyingTaskList({coop_tool_velocity_L, ee_alt_L, jl_L, object_task_L});
 
 actionManagerR_coop = ActionManager();
-actionManagerR_coop.addAction({coop_tool_velocity_R, jl_R, object_task_R}, "feasible vel Right");
-actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, jl_R, object_task_R});
+actionManagerR_coop.addAction({coop_tool_velocity_R, ee_alt_R, jl_R, object_task_R}, "feasible vel Right");
+actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, ee_alt_R, jl_R, object_task_R});
 
 % Track mission phases
 missionManager = MissionManager();
@@ -132,7 +133,6 @@ for t = 0:dt:end_time
 
     % 3. TO DO: compute the TPIK for each manipulator with your action
     % manager
-    % Run non cooperative TPIK
     [ql_dot_nc]=actionManagerL.computeICAT(coop_system.left_arm, dt);
     [qr_dot_nc]=actionManagerR.computeICAT(coop_system.right_arm, dt);
     
@@ -140,6 +140,7 @@ for t = 0:dt:end_time
         % Phase 1: just use non-cooperative velocities
         ql_dot = ql_dot_nc;
         qr_dot = qr_dot_nc;
+    
     elseif missionManager.phase == 2
         % RIGID BODY CONSTRAINT
         % Reference generator: desired object twist
@@ -176,9 +177,9 @@ for t = 0:dt:end_time
 
         % 5. TO DO: compute the TPIK for each manipulator with your action
         % manager (with the constrained action to track the coop velocity)
-        % Run cooperative TPIK
         [ql_dot] = actionManagerL_coop.computeICAT(coop_system.left_arm, dt);
         [qr_dot] = actionManagerR_coop.computeICAT(coop_system.right_arm, dt);
+    
     elseif missionManager.phase == 3
         % Phase 3: just use non-cooperative velocities
         ql_dot = ql_dot_nc;

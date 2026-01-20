@@ -104,15 +104,7 @@ classdef panda_arm < handle
         function compute_object_frame(obj)
             % Define the object frame as a rigid body attached to the tool frame
             obj.tTo = obj.wTt \ obj.wTo;  % tTo = wTt^-1 * wTo
-        end
-        
-        % forse non serve
-        function update_obj_jacobian(obj)
-            % Compute Differential kinematics from base to Object Frame
-            d_to = obj.wTt(1:3,4) - obj.wTo(1:3,4);
-            Sto = [eye(3) zeros(3,3); -(skew(obj.wTt(1:3,1:3) * d_to)) eye(3)];
-            obj.wJt = Sto * obj.wJt;            
-        end
+        end    
         
         function [xdotbar] = compute_desired_refVelocity(obj)
             % Compute desired object velocity for cooperative manipulation
