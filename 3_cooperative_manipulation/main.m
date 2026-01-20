@@ -63,14 +63,14 @@ coop_tool_velocity_R = coop_tool_velocity_task("R","COOP_TOOL_VEL_R");
 go_to_left={ee_alt_L, jl_L, left_tool_task};
 go_to_right={ee_alt_R, jl_R, right_tool_task};
 
-coop_manipulation_L={coop_tool_velocity_L, rigid_grasp_L, jl_L, object_task_L};
-coop_manipulation_R={coop_tool_velocity_R, rigid_grasp_R, jl_R, object_task_R};
+coop_manipulation_L={jl_L, object_task_L};
+coop_manipulation_R={jl_R, object_task_R};
 
 % Unified Lists 
 % forse non servono dato che gestiamo le azioni singolarmente
 % e c'è distinzione parte non cooperativa e cooperativa
-unifiedTasksL={coop_tool_velocity_L, rigid_grasp_L, ee_alt_L, jl_L, left_tool_task, object_task_L};
-unifiedTasksR={coop_tool_velocity_R, rigid_grasp_R, ee_alt_R, jl_R, right_tool_task, object_task_R};
+unifiedTasksL={ee_alt_L, jl_L, left_tool_task, object_task_L};
+unifiedTasksR={ee_alt_R, jl_R, right_tool_task, object_task_R};
 
 %TO DO: Create two action manager objects to manage the tasks of a single
 %manipulator (one for the non-cooperative and one for the cooperative steps
@@ -88,6 +88,16 @@ actionManagerR.addAction(coop_manipulation_R, "Cooperative Manipulation Right");
 actionManagerR.addUnifyingTaskList(unifiedTasksR);
 disp('Right Action Manager actions:');
 disp(actionManagerR.actionsName);
+
+% cooperative action manager for both arms during rigid grasping
+actionManagerL_coop = ActionManager();
+actionManagerL_coop.addAction({coop_tool_velocity_L, jl_L, object_task_L}, "feasible vel Left");
+actionManagerL_coop.addUnifyingTaskList({coop_tool_velocity_L, jl_L, object_task_L});
+
+actionManagerR_coop = ActionManager();
+actionManagerR_coop.addAction({coop_tool_velocity_R, jl_R, object_task_R}, "feasible vel Right");
+actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, jl_R, object_task_R});
+
 
 % Track mission phases
 missionManager = MissionManager();
@@ -163,8 +173,8 @@ for t = 0:dt:end_time
         % 5. TO DO: compute the TPIK for each manipulator with your action
         % manager (with the constrained action to track the coop velocity)
         % Run cooperative TPIK
-        [ql_dot] = actionManagerL.computeICAT(coop_system.left_arm, dt);
-        [qr_dot] = actionManagerR.computeICAT(coop_system.right_arm, dt);
+        [ql_dot] = actionManagerL_coop.computeICAT(coop_system.left_arm, dt);
+        [qr_dot] = actionManagerR_coop.computeICAT(coop_system.right_arm, dt);
     end
 
     % 6. get the two variables for integration

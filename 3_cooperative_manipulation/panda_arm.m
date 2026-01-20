@@ -109,6 +109,9 @@ classdef panda_arm < handle
             d_to = obj.wTt(1:3,4) - obj.wTo(1:3,4);
             Sto = [eye(3) zeros(3,3); -(skew(obj.wTt(1:3,1:3) * d_to)) eye(3)];
             obj.wJt = Sto * obj.wJt;
+            if(~isempty(obj.tTo))
+                obj.wTo = obj.wTt * obj.tTo;
+            end
         end
         
         function [xdotbar] = compute_desired_refVelocity(obj)
