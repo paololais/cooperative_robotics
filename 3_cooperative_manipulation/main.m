@@ -7,7 +7,7 @@ addpath('./tasks')
 clc;clear;close all; 
 %Simulation Parameters
 dt = 0.01;
-end_time = 15;
+end_time = 20;
 
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
@@ -51,12 +51,12 @@ ee_alt_L = ee_min_altitude_task("L","EE_ALT_L");
 ee_alt_R = ee_min_altitude_task("R","EE_ALT_R");
 jl_L = joint_limits_task("L","JL_L");
 jl_R = joint_limits_task("R","JL_R");
-rigid_grasp_L = rigid_constraint_task("L","RG_L");
-rigid_grasp_R = rigid_constraint_task("R","RG_R");
 object_task_L = object_motion_task("L","OBJ_MOTION_L");
 object_task_R = object_motion_task("R","OBJ_MOTION_R");
 coop_tool_velocity_L = coop_tool_velocity_task("L","COOP_TOOL_VEL_L");
 coop_tool_velocity_R = coop_tool_velocity_task("R","COOP_TOOL_VEL_R");
+stop_velocities_task_L = stop_velocities_task("L","STOP_VEL_L");
+stop_velocities_task_R = stop_velocities_task("R","STOP_VEL_R");
 
 %TO DO: Define the actions for each manipulator (remember the specific one
 %for the cooperation)
@@ -66,11 +66,14 @@ go_to_right={ee_alt_R, jl_R, right_tool_task};
 coop_manipulation_L={jl_L, object_task_L};
 coop_manipulation_R={jl_R, object_task_R};
 
+stop_motion_L = {ee_alt_L, stop_velocities_task_L};
+stop_motion_R = {ee_alt_R, stop_velocities_task_R};
+
 % Unified Lists 
 % forse non servono dato che gestiamo le azioni singolarmente
 % e c'è distinzione parte non cooperativa e cooperativa
-unifiedTasksL={ee_alt_L, jl_L, left_tool_task, object_task_L};
-unifiedTasksR={ee_alt_R, jl_R, right_tool_task, object_task_R};
+unifiedTasksL={ee_alt_L, jl_L, left_tool_task, object_task_L, stop_velocities_task_L};
+unifiedTasksR={ee_alt_R, jl_R, right_tool_task, object_task_R, stop_velocities_task_R};
 
 %TO DO: Create two action manager objects to manage the tasks of a single
 %manipulator (one for the non-cooperative and one for the cooperative steps
@@ -78,6 +81,7 @@ unifiedTasksR={ee_alt_R, jl_R, right_tool_task, object_task_R};
 actionManagerL = ActionManager();
 actionManagerL.addAction(go_to_left, "Go To Left");
 actionManagerL.addAction(coop_manipulation_L, "Cooperative Manipulation Left");
+actionManagerL.addAction(stop_motion_L, "Stop Motion left");
 actionManagerL.addUnifyingTaskList(unifiedTasksL);
 disp('Left Action Manager actions:');
 disp(actionManagerL.actionsName);
@@ -85,6 +89,7 @@ disp(actionManagerL.actionsName);
 actionManagerR = ActionManager();
 actionManagerR.addAction(go_to_right, "Go To Right");
 actionManagerR.addAction(coop_manipulation_R, "Cooperative Manipulation Right");
+actionManagerR.addAction(stop_motion_R, "Stop Motion right");
 actionManagerR.addUnifyingTaskList(unifiedTasksR);
 disp('Right Action Manager actions:');
 disp(actionManagerR.actionsName);
@@ -97,7 +102,6 @@ actionManagerL_coop.addUnifyingTaskList({coop_tool_velocity_L, jl_L, object_task
 actionManagerR_coop = ActionManager();
 actionManagerR_coop.addAction({coop_tool_velocity_R, jl_R, object_task_R}, "feasible vel Right");
 actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, jl_R, object_task_R});
-
 
 % Track mission phases
 missionManager = MissionManager();
@@ -175,7 +179,11 @@ for t = 0:dt:end_time
         % Run cooperative TPIK
         [ql_dot] = actionManagerL_coop.computeICAT(coop_system.left_arm, dt);
         [qr_dot] = actionManagerR_coop.computeICAT(coop_system.right_arm, dt);
-    end
+    elseif missionManager.phase == 3
+        % Phase 3: just use non-cooperative velocities
+        ql_dot = ql_dot_nc;
+        qr_dot = qr_dot_nc;      
+    end  
 
     % 6. get the two variables for integration
     coop_system.sim(ql_dot,qr_dot);

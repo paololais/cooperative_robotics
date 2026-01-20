@@ -67,8 +67,10 @@ classdef MissionManager < handle
 
                     disp("Cooperative Manipulation completed - Stop Motion starts");
                     
-                    actionManager.setBinaryTransition(false);
-                    actionManager.setCurrentAction("Stop Motion");
+                    actionManagerL.setBinaryTransition(false);
+                    actionManagerR.setBinaryTransition(false);
+                    actionManagerL.setCurrentAction("Stop Motion left");
+                    actionManagerR.setCurrentAction("Stop Motion right");
                     obj.phase_stop_motion_flag = true;
                     obj.phase = 3;
                 end

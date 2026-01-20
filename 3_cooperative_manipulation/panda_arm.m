@@ -87,7 +87,10 @@ classdef panda_arm < handle
             obj.wTe=obj.wTb*obj.bTe;
             %TO DO: Update the transformation from world frame to Tool frame
             obj.wTt = obj.wTe*obj.eTt;
-            obj.alt = obj.wTe(3,4); %Update altitude 
+            obj.alt = obj.wTe(3,4); %Update altitude
+            if(~isempty(obj.tTo))
+                obj.wTo = obj.wTt * obj.tTo;
+            end
         end
         
         function update_jacobian(obj)
@@ -108,10 +111,7 @@ classdef panda_arm < handle
             % Compute Differential kinematics from base to Object Frame
             d_to = obj.wTt(1:3,4) - obj.wTo(1:3,4);
             Sto = [eye(3) zeros(3,3); -(skew(obj.wTt(1:3,1:3) * d_to)) eye(3)];
-            obj.wJt = Sto * obj.wJt;
-            if(~isempty(obj.tTo))
-                obj.wTo = obj.wTt * obj.tTo;
-            end
+            obj.wJt = Sto * obj.wJt;            
         end
         
         function [xdotbar] = compute_desired_refVelocity(obj)
