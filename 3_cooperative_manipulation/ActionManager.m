@@ -35,7 +35,7 @@ classdef ActionManager < handle
         end
         
         % Non-cooperative TPIK
-        function [ydotbar] = computeICATnc(obj, robot, dt)
+        function [ydotbar] = computeICAT(obj, robot, dt)
              % Update time
             obj.timeSinceSwitch = obj.timeSinceSwitch + dt;
             t = obj.timeSinceSwitch;

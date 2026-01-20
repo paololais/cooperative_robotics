@@ -8,6 +8,7 @@ classdef panda_arm < handle
         q
         qdot
         xdot
+        xdot_coop
         %% --- Geometry ---
         wTb
         %% --- Limits ---
@@ -62,6 +63,8 @@ classdef panda_arm < handle
                        0            0         1     tool_length;
                        0            0         0     1];
             obj.wTt = obj.wTe * obj.eTt;
+
+            obj.xdot_coop = zeros(6,1);
           
         end
 
@@ -86,12 +89,38 @@ classdef panda_arm < handle
             obj.wTt = obj.wTe*obj.eTt;
             obj.alt = obj.wTe(3,4); %Update altitude 
         end
+        
         function update_jacobian(obj)
             % Compute Differential kinematics from the base frame to the
             % Tool Frame
             bJe = geometricJacobian(obj.robot_model.franka,[obj.q',0,0],'panda_link7');%DO NOT EDIT
             Ste = [eye(3) zeros(3); -skew(obj.wTe(1:3,1:3)*obj.eTt(1:3,4)) eye(3)];
             obj.wJt = Ste * [obj.wTb(1:3,1:3) zeros(3,3); zeros(3,3) obj.wTb(1:3,1:3)] * bJe(:, 1:7);
+        end
+                
+        function compute_object_frame(obj)
+            % Define the object frame as a rigid body attached to the tool frame
+            obj.tTo = obj.wTt \ obj.wTo;  % tTo = wTt^-1 * wTo
+        end
+        
+        % forse non serve
+        function update_obj_jacobian(obj)
+            % Compute Differential kinematics from base to Object Frame
+            d_to = obj.wTt(1:3,4) - obj.wTo(1:3,4);
+            Sto = [eye(3) zeros(3,3); -(skew(obj.wTt(1:3,1:3) * d_to)) eye(3)];
+            obj.wJt = Sto * obj.wJt;
+        end
+        
+        function [xdotbar] = compute_desired_refVelocity(obj)
+            % Compute desired object velocity for cooperative manipulation
+            [v_ang, v_lin] = CartError(obj.wTt, obj.wTo);
+
+            % Desired object velocity
+            xdotbar = 0.2*[v_ang; v_lin];
+
+            % Saturation
+            xdotbar(1:3) = Saturate(xdotbar(1:3), 0.3);
+            xdotbar(4:6) = Saturate(xdotbar(4:6), 0.3);
         end
     end
 end

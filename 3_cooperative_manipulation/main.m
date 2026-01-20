@@ -40,7 +40,7 @@ arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/9, 0));
 arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
-wTog=[rotation(0,0,0) [0.6, -0.4, 0.48]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -51,35 +51,50 @@ ee_alt_L = ee_min_altitude_task("L","EE_ALT_L");
 ee_alt_R = ee_min_altitude_task("R","EE_ALT_R");
 jl_L = joint_limits_task("L","JL_L");
 jl_R = joint_limits_task("R","JL_R");
+rigid_grasp_L = rigid_constraint_task("L","RG_L");
+rigid_grasp_R = rigid_constraint_task("R","RG_R");
+object_task_L = object_motion_task("L","OBJ_MOTION_L");
+object_task_R = object_motion_task("R","OBJ_MOTION_R");
+coop_tool_velocity_L = coop_tool_velocity_task("L","COOP_TOOL_VEL_L");
+coop_tool_velocity_R = coop_tool_velocity_task("R","COOP_TOOL_VEL_R");
 
 %TO DO: Define the actions for each manipulator (remember the specific one
 %for the cooperation)
 go_to_left={ee_alt_L, jl_L, left_tool_task};
 go_to_right={ee_alt_R, jl_R, right_tool_task};
 
+coop_manipulation_L={coop_tool_velocity_L, rigid_grasp_L, jl_L, object_task_L};
+coop_manipulation_R={coop_tool_velocity_R, rigid_grasp_R, jl_R, object_task_R};
+
 % Unified Lists 
 % forse non servono dato che gestiamo le azioni singolarmente
 % e c'è distinzione parte non cooperativa e cooperativa
-unifiedTasksL={ee_alt_L, jl_L, left_tool_task};
-unifiedTasksR={ee_alt_R, jl_R, right_tool_task};
+unifiedTasksL={coop_tool_velocity_L, rigid_grasp_L, ee_alt_L, jl_L, left_tool_task, object_task_L};
+unifiedTasksR={coop_tool_velocity_R, rigid_grasp_R, ee_alt_R, jl_R, right_tool_task, object_task_R};
 
 %TO DO: Create two action manager objects to manage the tasks of a single
 %manipulator (one for the non-cooperative and one for the cooperative steps
 %of the algorithm)
 actionManagerL = ActionManager();
 actionManagerL.addAction(go_to_left, "Go To Left");
+actionManagerL.addAction(coop_manipulation_L, "Cooperative Manipulation Left");
 actionManagerL.addUnifyingTaskList(unifiedTasksL);
 disp('Left Action Manager actions:');
 disp(actionManagerL.actionsName);
 
 actionManagerR = ActionManager();
 actionManagerR.addAction(go_to_right, "Go To Right");
+actionManagerR.addAction(coop_manipulation_R, "Cooperative Manipulation Right");
 actionManagerR.addUnifyingTaskList(unifiedTasksR);
 disp('Right Action Manager actions:');
 disp(actionManagerR.actionsName);
 
 % Track mission phases
 missionManager = MissionManager();
+missionManager.phase = 1;
+
+% Initial bias for cooperation weights
+mu0 = 0.2;
 
 %Initiliaze robot interface
 robot_udp=UDP_interface(real_robot);
@@ -98,19 +113,59 @@ for t = 0:dt:end_time
     % 2. Update Full kinematics of the bimanual system
     coop_system.update_full_kinematics();
 
-    % Update mission phase
+    % Update mission phase based on current actions and robot/object states
     missionManager.updateMissionPhase(actionManagerL, actionManagerR, coop_system);
-    
+
     % 3. TO DO: compute the TPIK for each manipulator with your action
     % manager
-    [ql_dot]=actionManagerL.computeICATnc(coop_system.left_arm, dt);
-    [qr_dot]=actionManagerR.computeICATnc(coop_system.right_arm, dt);
-
-    % 4. TO DO: COOPERATION hierarchy
-    % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
+    % Run non cooperative TPIK
+    [ql_dot_nc]=actionManagerL.computeICAT(coop_system.left_arm, dt);
+    [qr_dot_nc]=actionManagerR.computeICAT(coop_system.right_arm, dt);
     
-    % 5. TO DO: compute the TPIK for each manipulator with your action
-    % manager (with the constrained action to track the coop velocity)
+    if missionManager.phase == 1
+        % Phase 1: just use non-cooperative velocities
+        ql_dot = ql_dot_nc;
+        qr_dot = qr_dot_nc;
+    elseif missionManager.phase == 2
+        % RIGID BODY CONSTRAINT
+        % Reference generator: desired object twist
+
+        % 4. TO DO: COOPERATION hierarchy
+        % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
+        xdot_ref = coop_system.left_arm.compute_desired_refVelocity();
+
+        % Share reference with both arms
+        coop_system.right_arm.xdot = xdot_ref;
+
+        % Compute non-cooperative tool velocities
+        x_dot_t_a = coop_system.left_arm.wJt * ql_dot_nc;
+        x_dot_t_b = coop_system.right_arm.wJt * qr_dot_nc;
+
+        % Compute weights        
+        mu_a = mu0 + norm(xdot_ref - x_dot_t_a);
+        mu_b = mu0 + norm(xdot_ref - x_dot_t_b);
+
+        % Weighted cooperative velocity (xhat_dot)
+        x_hat_dot = (mu_a*x_dot_t_a + mu_b*x_dot_t_b) / (mu_a + mu_b);
+
+        % Compute rigid grasp constraint and feasible space
+        [Ha,Hb,C] = computeRigidGraspConstraints(coop_system.left_arm, coop_system.right_arm);
+        Hab = [Ha zeros(6)
+              zeros(6) Hb];
+
+        % Project onto feasible subspace (avoid internal forces)
+        x_tilde_dot = Hab * (eye(12) - pinv(C)*C) * [x_hat_dot; x_hat_dot];
+
+        % Set cooperative task reference
+        coop_system.left_arm.xdot_coop  = x_tilde_dot(1:6);
+        coop_system.right_arm.xdot_coop = x_tilde_dot(7:12);
+
+        % 5. TO DO: compute the TPIK for each manipulator with your action
+        % manager (with the constrained action to track the coop velocity)
+        % Run cooperative TPIK
+        [ql_dot] = actionManagerL.computeICAT(coop_system.left_arm, dt);
+        [qr_dot] = actionManagerR.computeICAT(coop_system.right_arm, dt);
+    end
 
     % 6. get the two variables for integration
     coop_system.sim(ql_dot,qr_dot);
@@ -121,7 +176,7 @@ for t = 0:dt:end_time
     % 7. Loggging
     logger_left.update(coop_system.time,coop_system.loopCounter)
     logger_right.update(coop_system.time,coop_system.loopCounter)
-    coop_system.time
+    coop_system.time;
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end

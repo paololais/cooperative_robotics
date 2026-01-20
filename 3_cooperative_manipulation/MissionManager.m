@@ -2,6 +2,7 @@ classdef MissionManager < handle
     properties
         pos_threshold = 0.01;   % meters
         ang_threshold = 0.1;    % radians (approximately 5.7 degrees)
+        phase = 1; % 1: Reaching, 2: Rigid Constraint, 3: Stop Motion
         % flags for phase transition
         phase_rigid_constraint_flag = false;
         phase_stop_motion_flag = false;
@@ -14,8 +15,8 @@ classdef MissionManager < handle
 
         function updateMissionPhase(obj, actionManagerL, actionManagerR, coop_system)
             if strcmp(actionManagerL.actionsName{actionManagerL.currentAction}, "Go To Left") && ...
-                strcmp(actionManagerR.actionsName{actionManagerR.currentAction}, "Go To Right")
-                % PHASE 1: Reaching grasping points
+                strcmp(actionManagerR.actionsName{actionManagerR.currentAction}, "Go To Right")                
+                % PHASE 1: Reaching grasping points                
                 R1_error = coop_system.left_arm.wTg(1:3, 1:3)' * coop_system.left_arm.wTt(1:3, 1:3);
                 R2_error = coop_system.right_arm.wTg(1:3, 1:3)' * coop_system.right_arm.wTt(1:3, 1:3);
                 % Angular error
@@ -31,7 +32,7 @@ classdef MissionManager < handle
                         ~obj.phase_rigid_constraint_flag
                     disp("Arms reached grasping points!");
                     % TRANSITION TO PHASE 2: Grasping points reached
-                    disp("Go To Position completed - Bimanual Manipulation starts");
+                    disp("Go To Position completed - Cooperative Manipulation starts");
 
                     % Define the object frame at grasping point
                     coop_system.left_arm.compute_object_frame();
@@ -46,11 +47,15 @@ classdef MissionManager < handle
                         coop_system.left_arm.wTog(1,4), coop_system.left_arm.wTog(2,4), coop_system.left_arm.wTog(3,4));
 
                     % Set binary transition (no smoothness) for rigid constraint
-                    actionManager.setBinaryTransition(true);
-                    actionManager.setCurrentAction("Bimanual Manipulation");
+                    actionManagerL.setBinaryTransition(true);
+                    actionManagerL.setCurrentAction("Cooperative Manipulation Left");
+                    actionManagerR.setBinaryTransition(true);
+                    actionManagerR.setCurrentAction("Cooperative Manipulation Right");
                     obj.phase_rigid_constraint_flag = true;
+                    obj.phase = 2;
                 end
-            elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Bimanual Manipulation")
+            elseif strcmp(actionManagerL.actionsName{actionManagerL.currentAction}, "Cooperative Manipulation Left") && ...
+                    strcmp(actionManagerR.actionsName{actionManagerR.currentAction}, "Cooperative Manipulation Right")
                 % PHASE 2: Rigid body grasping and object movement
                 % Check if object reached goal position
                 object_pos_error = norm(coop_system.left_arm.wTo(1:3,4) - coop_system.left_arm.wTog(1:3,4));
@@ -60,11 +65,12 @@ classdef MissionManager < handle
                     fprintf("Final object position: [%.3f, %.3f, %.3f]\n", ...
                         coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
 
-                    disp("Bimanual Manipulation completed - Stop Motion starts");
+                    disp("Cooperative Manipulation completed - Stop Motion starts");
                     
                     actionManager.setBinaryTransition(false);
                     actionManager.setCurrentAction("Stop Motion");
-                    obj.phase_stop_motion_flag = true;                    
+                    obj.phase_stop_motion_flag = true;
+                    obj.phase = 3;
                 end
             end
         end
