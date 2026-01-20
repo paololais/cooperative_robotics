@@ -47,14 +47,21 @@ arm2.set_obj_goal(wTog)
 %Define Tasks, input values(Robot type(L,R,BM), Task Name)
 left_tool_task=tool_task("L","LT");
 right_tool_task=tool_task("R","RT");
+ee_alt_L = ee_min_altitude_task("L","EE_ALT_L");
+ee_alt_R = ee_min_altitude_task("R","EE_ALT_R");
+jl_L = joint_limits_task("L","JL_L");
+jl_R = joint_limits_task("R","JL_R");
 
 %TO DO: Define the actions for each manipulator (remember the specific one
 %for the cooperation)
-go_to_left={left_tool_task};
-go_to_right={right_tool_task};
+go_to_left={ee_alt_L, jl_L, left_tool_task};
+go_to_right={ee_alt_R, jl_R, right_tool_task};
 
-unifiedTasksL={left_tool_task};
-unifiedTasksR={right_tool_task};
+% Unified Lists 
+% forse non servono dato che gestiamo le azioni singolarmente
+% e c'è distinzione parte non cooperativa e cooperativa
+unifiedTasksL={ee_alt_L, jl_L, left_tool_task};
+unifiedTasksR={ee_alt_R, jl_R, right_tool_task};
 
 %TO DO: Create two action manager objects to manage the tasks of a single
 %manipulator (one for the non-cooperative and one for the cooperative steps
@@ -70,6 +77,9 @@ actionManagerR.addAction(go_to_right, "Go To Right");
 actionManagerR.addUnifyingTaskList(unifiedTasksR);
 disp('Right Action Manager actions:');
 disp(actionManagerR.actionsName);
+
+% Track mission phases
+missionManager = MissionManager();
 
 %Initiliaze robot interface
 robot_udp=UDP_interface(real_robot);
@@ -87,6 +97,9 @@ for t = 0:dt:end_time
     end
     % 2. Update Full kinematics of the bimanual system
     coop_system.update_full_kinematics();
+
+    % Update mission phase
+    missionManager.updateMissionPhase(actionManagerL, actionManagerR, coop_system);
     
     % 3. TO DO: compute the TPIK for each manipulator with your action
     % manager
