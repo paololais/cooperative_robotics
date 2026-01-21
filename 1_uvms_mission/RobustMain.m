@@ -23,6 +23,7 @@ task_vehicle_mis1 = TaskVehicleMisalignment();
 task_vehicle_mis2 = TaskVehicleMisalignment();
 task_vehicle_alt = TaskVehicleAltitude();
 task_vehicle_land = TaskVehicleLand();
+task_vehicle_heading = TaskVehicleHeading();
 
 task_set1 = { task_vehicle_alt, task_vehicle_mis1, task_vehicle_pos1 };   % Safe Navigation
 task_set2 = { task_vehicle_mis2, task_vehicle_land, task_vehicle_pos2 };  % Landing
@@ -47,6 +48,10 @@ w_arm_goal_orientation = [0, pi, pi/2];
 % Vehicle goal position and orientation
 w_vehicle_goal_position = [10.5 37.5 -38]';
 w_vehicle_goal_orientation = [0, -0.06, 0.5];
+%nodule position
+nodule_position = [10.5; 37.5; -38];
+task_vehicle_heading.setTarget(nodule_position);
+
 
 % Set goals in the robot model
 robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
