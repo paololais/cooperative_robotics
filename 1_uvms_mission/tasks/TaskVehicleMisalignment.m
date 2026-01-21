@@ -1,8 +1,6 @@
-%% 
 classdef TaskVehicleMisalignment < Task   
     properties
     end
-
     methods
         function updateReference(obj, robot)
             % Vehicle z-axis
@@ -19,7 +17,6 @@ classdef TaskVehicleMisalignment < Task
             obj.xdotbar = 1.5 * (0.1 - theta);
             obj.xdotbar = Saturate(obj.xdotbar, 0.5);
         end
-
         function updateJacobian(obj, robot)
             w_kv = robot.wTv(1:3,3);
             w_kw = [0; 0; 1];
@@ -44,4 +41,4 @@ classdef TaskVehicleMisalignment < Task
             obj.A = IncreasingBellShapedFunction(0.1, 0.2, 0, 1, theta);
         end
     end
-end
+end 
