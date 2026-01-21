@@ -8,7 +8,7 @@ clc; clear; close all;
 
 % Simulation parameters
 dt       = 0.005;
-endTime  = 70;
+endTime  = 40;
 % Initialize robot model and simulator
 robotModel = UvmsModel();          
 sim = UvmsSim(dt, robotModel, endTime);
@@ -26,16 +26,16 @@ task_vehicle_heading = TaskVehicleHeading();
 task_stop_vehicle = TaskStopVehicle();
 
 task_set1 = { task_vehicle_alt, task_vehicle_mis1, task_vehicle_pos };   % Safe Navigation
-task_set2 = { task_vehicle_mis2, task_vehicle_land, task_vehicle_heading, task_vehicle_pos };  % Landing
+task_set2 = { task_vehicle_mis2, task_vehicle_heading, task_vehicle_land, task_vehicle_pos };  % Landing
 task_set3 = { task_stop_vehicle, task_tool };  % Manipulation
 
 % Unifying task list
 %unified_task_list = {task_vehicle_alt, task_vehicle_mis2, task_stop_vehicle, ...
  %                   task_vehicle_mis1, task_vehicle_land, ...
   %                  task_vehicle_heading, task_vehicle_pos, task_tool };
-unified_task_list = {task_vehicle_alt, task_vehicle_mis2, ...
-                    task_vehicle_mis1, task_vehicle_land, ...
-                    task_vehicle_heading, task_vehicle_pos };
+unified_task_list = {task_vehicle_alt, task_vehicle_mis2, task_stop_vehicle, ...
+                    task_vehicle_mis1, task_vehicle_heading, task_vehicle_land, ...
+                    task_vehicle_pos, task_tool };
 
 % Define actions and add to ActionManager
 actionManager = ActionManager();
@@ -50,6 +50,7 @@ disp(actionManager.actionsName)
 actionManager.setCurrentAction("Safe Navigation");
 
 % Define desired positions and orientations (world frame)
+%w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
 w_arm_goal_position = [10.5 37.5 -38]';
 w_arm_goal_orientation = [0, pi, pi/2];
 
@@ -108,6 +109,7 @@ for step = 1:sim.maxSteps
     if mod(sim.loopCounter, round(1 / sim.dt)) == 0
         fprintf('t = %.2f s\n', sim.time);
         fprintf('alt = %.2f m\n', robotModel.altitude);
+        fprintf('Heading error (rad): %.3f\n', robotModel.theta_error);
     end
 
     % 7. Optional real-time slowdown

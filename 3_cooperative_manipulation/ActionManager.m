@@ -67,8 +67,12 @@ classdef ActionManager < handle
                     elseif ~inCurrent(i) && inPrevious(i)
                         % Disappearing task: immediately inactive
                         a = 0;
-                    else
+                    elseif inCurrent(i) && inPrevious(i)
+                        % Task in both actions: fully active
                         a = 1;
+                    else
+                        % Task not present in either: inactive
+                        a = 0;
                     end
                 else
                     % Smooth transition: Bell-shaped function
@@ -78,8 +82,12 @@ classdef ActionManager < handle
                     elseif ~inCurrent(i) && inPrevious(i)
                         % Disappearing task
                         a = DecreasingBellShapedFunction(0, T, 0, 1, t);    
-                    else
+                    elseif inCurrent(i) && inPrevious(i)
+                        % Task in both actions: fully active
                         a = 1;
+                    else
+                        % Task not present in either: inactive
+                        a = 0;
                     end
                 end
                 task.A = a * task.A;

@@ -51,9 +51,13 @@ classdef ActionManager < handle
        
                 elseif ~inCurrent(i) && inPrevious(i)
                     % Disappearing task
-                    a = DecreasingBellShapedFunction(0, T, 0, 1, t);    
-                else
+                    a = DecreasingBellShapedFunction(0, T, 0, 1, t);
+                elseif inCurrent(i) && inPrevious(i)
+                    % Task in both actions: fully active
                     a = 1;
+                else
+                    % Task not present in either: inactive
+                    a = 0;
                 end
                 task.A = a * task.A;
             end
