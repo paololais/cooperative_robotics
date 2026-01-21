@@ -1,9 +1,6 @@
 classdef TaskVehicleHeading < Task   
     methods
         function updateReference(obj, robot)
-
-            % w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
-            % w_vehicle_goal_position = [10.5 37.5 -38]';
             % Vehicle x-axis
             w_xv = robot.wTv(1:3,1);
 
@@ -12,7 +9,7 @@ classdef TaskVehicleHeading < Task
 
             % Vector from vehicle to nodule (horizontal plane)
             diff = nodule_pos - robot.wTv(1:3,4);
-            diff(3) = 0;
+            diff(3) = 0; % neglect vertical component
             if norm(diff) > 1e-3
                 w_xd = diff / norm(diff);
             else
@@ -32,28 +29,25 @@ classdef TaskVehicleHeading < Task
             cos_theta = dot(w_xv, w_xd);
             theta = atan2(sin_theta, cos_theta);
 
-            % Threshold
-            theta_min = 0.05;
-            if abs(theta) < theta_min
-                obj.xdotbar = zeros(3,1);
-            else
-                kp = 0.6;
-                obj.xdotbar = kp * theta * n;  % 3x1 vector
-                obj.xdotbar = Saturate(obj.xdotbar, 0.5);
-            end
+            obj.xdotbar = 0.6 * theta * n;
+            obj.xdotbar = Saturate(obj.xdotbar, 0.5);
 
-            robot.theta_error = theta;  % for logging
+            robot.theta_error = theta;  % store heading error in robot model
         end
 
         function updateJacobian(obj, robot)
-            % Map vehicle angular velocities to heading task
-            J = zeros(3, 13);
-            J(:,11:13) = eye(3);  % last 3 vehicle DOFs = angular velocities
-            obj.J = J;
+            % Jacobian maps vehicle angular velocities to heading change
+            obj.J = [zeros(3,10) eye(3)]; % last 3 vehicle DOFs = angular velocities
         end
 
         function updateActivation(obj, robot)
-            obj.A = eye(3);
+            % Inequality task
+            if isempty(robot.theta_error)
+                theta = 0;
+            else
+                theta = robot.theta_error;
+            end            
+            obj.A = IncreasingBellShapedFunction(0.05, 0.15, zeros(3,1), eye(3), theta);
         end
     end
 end
