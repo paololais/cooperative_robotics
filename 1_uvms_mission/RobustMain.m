@@ -43,11 +43,10 @@ actionManager.setCurrentAction("Safe Navigation");
 % Define desired positions and orientations (world frame)
 w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
 w_arm_goal_orientation = [0, pi, pi/2];
-%w_vehicle_goal_position = [10.5, 37.5, -38]';
-%w_vehicle_goal_position = [12.2025 37.3748 -39.8860]';
-%w_vehicle_goal_position = [12.2025 37.3748 -45]';
-w_vehicle_goal_position = [50 -12.5 -33]';
-w_vehicle_goal_orientation = [0, 0, 0];
+
+% Vehicle goal position and orientation
+w_vehicle_goal_position = [10.5 37.5 -38]';
+w_vehicle_goal_orientation = [0, -0.06, 0.5];
 
 % Set goals in the robot model
 robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
