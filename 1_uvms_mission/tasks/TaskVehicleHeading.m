@@ -1,65 +1,59 @@
 classdef TaskVehicleHeading < Task   
-    properties
-        % Non serve più nessuna proprietà extra!
-    end
-
     methods
         function updateReference(obj, robot)
-            % 1. Vettore di interesse del veicolo: Asse X
+
+            % w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
+            % w_vehicle_goal_position = [10.5 37.5 -38]';
+            % Vehicle x-axis
             w_xv = robot.wTv(1:3,1);
-            
-            % 2. Recupera la posizione del nodulo direttamente dal modello
-            % wTg è 4x4, prendiamo la traslazione (prime 3 righe, colonna 4)
-            nodule_pos = robot.wTg(1:3, 4); 
-            
-            % Vettore dal veicolo al nodulo
+
+            % Nodule position
+            nodule_pos = robot.wTg(1:3,4);
+
+            % Vector from vehicle to nodule (horizontal plane)
             diff = nodule_pos - robot.wTv(1:3,4);
-            diff(3) = 0; % Proiezione sul piano orizzontale
-            
-            % Calcolo versore desiderato
-            if norm(diff) > 0.01
+            diff(3) = 0;
+            if norm(diff) > 1e-3
                 w_xd = diff / norm(diff);
             else
-                w_xd = w_xv; % Evita singolarità
+                w_xd = w_xv;  % avoid singularity
             end
-        
-            % 3. Calcolo errore di disallineamento
-            n = cross(w_xd, w_xv);           
-            sin_theta = norm(n);             
-            cos_theta = dot(w_xd, w_xv);     
+
+            % Rotation axis
+            n = cross(w_xv, w_xd);
+            sin_theta = norm(n);
+            if sin_theta > 1e-6
+                n = n / sin_theta;
+            else
+                n = zeros(3,1);
+            end
+
+            % Signed angle
+            cos_theta = dot(w_xv, w_xd);
             theta = atan2(sin_theta, cos_theta);
 
-            robot.theta_error = theta; 
-            
-            % 4. Controllo
-            obj.xdotbar = 1.0 * (0 - theta);
-            obj.xdotbar = Saturate(obj.xdotbar, 0.5);
+            % Threshold
+            theta_min = 0.05;
+            if abs(theta) < theta_min
+                obj.xdotbar = zeros(3,1);
+            else
+                kp = 0.6;
+                obj.xdotbar = kp * theta * n;  % 3x1 vector
+                obj.xdotbar = Saturate(obj.xdotbar, 0.5);
+            end
+
+            robot.theta_error = theta;  % for logging
         end
 
         function updateJacobian(obj, robot)
-            w_xv = robot.wTv(1:3,1);
-            
-            % Recupera nodulo anche qui
-            nodule_pos = robot.wTg(1:3, 4);
-            
-            diff = nodule_pos - robot.wTv(1:3,4);
-            diff(3) = 0;
-            if norm(diff) > 0.01
-                w_xd = diff / norm(diff);
-            else
-                w_xd = w_xv;
-            end
-            
-            n = cross(w_xv, w_xd);
-            if norm(n) > 0
-                n = n/norm(n);
-            end
-            
-            obj.J = n' * [zeros(3,7) zeros(3) eye(3)];
+            % Map vehicle angular velocities to heading task
+            J = zeros(3, 13);
+            J(:,11:13) = eye(3);  % last 3 vehicle DOFs = angular velocities
+            obj.J = J;
         end
-        
+
         function updateActivation(obj, robot)
-            obj.A = 1;
+            obj.A = eye(3);
         end
     end
 end

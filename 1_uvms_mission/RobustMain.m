@@ -50,21 +50,13 @@ disp(actionManager.actionsName)
 actionManager.setCurrentAction("Safe Navigation");
 
 % Define desired positions and orientations (world frame)
-%w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
-w_arm_goal_position = [10.5 37.5 -38]';
+w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
+%w_arm_goal_position = [10.5 37.5 -38]';
 w_arm_goal_orientation = [0, pi, pi/2];
 
 % Vehicle goal position and orientation
 w_vehicle_goal_position = [10.5 37.5 -38]';
 w_vehicle_goal_orientation = [0, -0.06, 0.5];
-
-% Posizione target del veicolo (vicino al nodulo, ma non sopra)
-vehicle_target_pos = [10.5; 37.5; -38]; % O un punto offset calcolato
-vehicle_target_rpy = [0, 0, 0];
-
-% Passa il nodulo come goal del Tool
-%robotModel.setGoal(nodule_position, nodule_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
-
 
 % Set goals in the robot model
 robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
