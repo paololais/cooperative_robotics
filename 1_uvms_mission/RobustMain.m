@@ -50,7 +50,14 @@ w_vehicle_goal_position = [10.5 37.5 -38]';
 w_vehicle_goal_orientation = [0, -0.06, 0.5];
 %nodule position
 nodule_position = [10.5; 37.5; -38];
-task_vehicle_heading.setTarget(nodule_position);
+nodule_orientation = [0, pi, pi/2]; % Orientamento desiderato per la manipolazione
+
+% Posizione target del veicolo (vicino al nodulo, ma non sopra)
+vehicle_target_pos = [10.5; 37.5; -38]; % O un punto offset calcolato
+vehicle_target_rpy = [0, 0, 0];
+
+% Passa il nodulo come goal del Tool
+%robotModel.setGoal(nodule_position, nodule_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
 
 
 % Set goals in the robot model
