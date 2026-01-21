@@ -17,23 +17,31 @@ unity = UnityInterface("127.0.0.1");
 
 % Define tasks    
 task_tool = TaskTool();
-task_vehicle_pos1 = TaskVehiclePosition();       
-task_vehicle_pos2 = TaskVehiclePosition();
+task_vehicle_pos = TaskVehiclePosition();
 task_vehicle_mis1 = TaskVehicleMisalignment();
 task_vehicle_mis2 = TaskVehicleMisalignment();
 task_vehicle_alt = TaskVehicleAltitude();
 task_vehicle_land = TaskVehicleLand();
 task_vehicle_heading = TaskVehicleHeading();
+task_stop_vehicle = TaskStopVehicle();
 
-task_set1 = { task_vehicle_alt, task_vehicle_mis1, task_vehicle_pos1 };   % Safe Navigation
-task_set2 = { task_vehicle_mis2, task_vehicle_land, task_vehicle_pos2 };  % Landing
+task_set1 = { task_vehicle_alt, task_vehicle_mis1, task_vehicle_pos };   % Safe Navigation
+task_set2 = { task_vehicle_mis2, task_vehicle_land, task_vehicle_heading, task_vehicle_pos };  % Landing
+task_set3 = { task_stop_vehicle, task_tool };  % Manipulation
+
 % Unifying task list
-unified_task_list = {task_vehicle_alt, task_vehicle_mis1, task_vehicle_mis2, task_vehicle_land, task_vehicle_pos1, task_vehicle_pos2 };
+%unified_task_list = {task_vehicle_alt, task_vehicle_mis2, task_stop_vehicle, ...
+ %                   task_vehicle_mis1, task_vehicle_land, ...
+  %                  task_vehicle_heading, task_vehicle_pos, task_tool };
+unified_task_list = {task_vehicle_alt, task_vehicle_mis2, ...
+                    task_vehicle_mis1, task_vehicle_land, ...
+                    task_vehicle_heading, task_vehicle_pos };
 
 % Define actions and add to ActionManager
 actionManager = ActionManager();
 actionManager.addAction(task_set1, "Safe Navigation");  % Action 1: Safe Navigation
 actionManager.addAction(task_set2, "Landing");          % Action 2: Landing
+actionManager.addAction(task_set3, "Manipulation");     % Action 3: Manipulation
 actionManager.addUnifyingTaskList(unified_task_list);
 
 disp(actionManager.actionsName)
@@ -42,15 +50,12 @@ disp(actionManager.actionsName)
 actionManager.setCurrentAction("Safe Navigation");
 
 % Define desired positions and orientations (world frame)
-w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
+w_arm_goal_position = [10.5 37.5 -38]';
 w_arm_goal_orientation = [0, pi, pi/2];
 
 % Vehicle goal position and orientation
 w_vehicle_goal_position = [10.5 37.5 -38]';
 w_vehicle_goal_orientation = [0, -0.06, 0.5];
-%nodule position
-nodule_position = [10.5; 37.5; -38];
-nodule_orientation = [0, pi, pi/2]; % Orientamento desiderato per la manipolazione
 
 % Posizione target del veicolo (vicino al nodulo, ma non sopra)
 vehicle_target_pos = [10.5; 37.5; -38]; % O un punto offset calcolato
@@ -72,12 +77,18 @@ for step = 1:sim.maxSteps
     % 1. Receive altitude from Unity
     robotModel.altitude = unity.receiveAltitude(robotModel);
 
-    % Only switch if currently in Safe Navigation
+    % Mission controller
     if strcmp(actionManager.actionsName{actionManager.currentAction}, "Safe Navigation")
         xy_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
         if xy_error < 0.5 && robotModel.altitude > 1.0
             disp("Safe Navigation complete - switch to Landing")
             actionManager.setCurrentAction("Landing");
+        end
+    elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Landing")
+        alt_error = abs(robotModel.altitude - 0.5);
+        if alt_error < 0.1 && abs(robotModel.theta_error) < 0.1
+            disp("Landing complete - switch to Manipulation")
+            actionManager.setCurrentAction("Manipulation");
         end
     end
 

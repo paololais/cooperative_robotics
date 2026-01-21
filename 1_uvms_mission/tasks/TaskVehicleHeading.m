@@ -28,9 +28,11 @@ classdef TaskVehicleHeading < Task
             sin_theta = norm(n);             
             cos_theta = dot(w_xd, w_xv);     
             theta = atan2(sin_theta, cos_theta);
+
+            robot.theta_error = theta; 
             
             % 4. Controllo
-            obj.xdotbar = 1.5 * (0 - theta);
+            obj.xdotbar = 1.0 * (0 - theta);
             obj.xdotbar = Saturate(obj.xdotbar, 0.5);
         end
 
