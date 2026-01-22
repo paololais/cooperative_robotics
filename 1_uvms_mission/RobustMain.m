@@ -10,12 +10,12 @@ clc; clear; close all;
 dt       = 0.005;
 endTime  = 40;
 % Initialize robot model and simulator
-robotModel = UvmsModel();          
+robotModel = UvmsModel();
 sim = UvmsSim(dt, robotModel, endTime);
 % Initialize Unity interface
 unity = UnityInterface("127.0.0.1");
 
-% Define tasks    
+% Define tasks
 task_tool = TaskTool();
 task_vehicle_pos = TaskVehiclePosition();
 task_hor_attitude = TaskHorAttitude();
@@ -30,8 +30,8 @@ task_set3 = { task_stop_vehicle, task_tool };  % Manipulation
 
 % Unifying task list
 unified_task_list = {task_vehicle_alt, task_stop_vehicle, ... % safety
-                    task_hor_attitude, task_vehicle_heading, ... % prerequisites
-                    task_vehicle_land, task_vehicle_pos, task_tool }; % action defining
+    task_hor_attitude, task_vehicle_heading, ... % prerequisites
+    task_vehicle_land, task_vehicle_pos, task_tool }; % action defining
 
 % Define actions and add to ActionManager
 actionManager = ActionManager();
@@ -62,6 +62,12 @@ idx=1;
 
 % Initialize mission phase: 1=Safe Navigation, 2=Landing, 3=Manipulation
 missionPhase = 1;
+manFlag = false; % manipulation complete flag
+
+% compute arm max reach
+% rmax = computeArmMaxReach(robotModel);
+% fprintf('arm max reach (m): %.3f\n', rmax);
+rmax = 1.856; % precomputed value using computeArmMaxReach function
 
 % Main simulation loop
 for step = 1:sim.maxSteps
@@ -70,29 +76,43 @@ for step = 1:sim.maxSteps
 
     % Mission controller
     if missionPhase == 1
-    %if strcmp(actionManager.actionsName{actionManager.currentAction}, "Safe Navigation")
-        % Check if vehicle reached goal position
         xy_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
-        if xy_error < 0.2            
+        if xy_error < 0.2
             disp("Safe Navigation complete - switch to Landing")
             actionManager.setCurrentAction("Landing");
             missionPhase = 2;
         end
     elseif missionPhase == 2
         alt_error = abs(robotModel.altitude - 0.5);
+        % to check if nodule is reachable
+        w_vehicle_position = robotModel.eta(1:3);
+        d_vec = w_arm_goal_position - w_vehicle_position;
+        d = norm(d_vec);
+
         if alt_error < 0.1 && abs(robotModel.theta_error) < 0.1
-            disp("Landing complete - switch to Manipulation")
-            actionManager.setCurrentAction("Manipulation");
-            missionPhase = 3;
+            % Vehicle is landed and aligned
+            if d > rmax
+                % Nodule still outside workspace -> adjust vehicle goal
+                fprintf('Adjusting vehicle goal to guarantee nodule reachability\n');
+                correction = d_vec * (d - rmax)/d;
+                w_vehicle_goal_position = w_vehicle_goal_position + correction;
+                robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
+                % stay in missionPhase 2 until vehicle reaches new goal
+            else
+                % Nodule is within reach -> switch to Manipulation
+                disp("Landing complete - switch to Manipulation")
+                actionManager.setCurrentAction("Manipulation");
+                missionPhase = 3;
+            end
         end
     elseif missionPhase == 3
-        % Check if manipulation is complete
         tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
-        if tool_pos_error < 0.1
+        if tool_pos_error < 0.1 && ~manFlag
+            manFlag = true;
             disp("Manipulation complete");
             % Optionally, end simulation or hold position
             % break;
-        end        
+        end
     end
 
     % 2. Compute control commands for current action
@@ -113,12 +133,12 @@ for step = 1:sim.maxSteps
         fprintf('alt = %.2f m\n', robotModel.altitude);
         if missionPhase == 1
             pos_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
-            fprintf('Vehicle position error (m): %.3f\n', pos_error);        
+            fprintf('Vehicle position error (m): %.3f\n', pos_error);
         elseif missionPhase == 2
             fprintf('Heading error (rad): %.3f\n', robotModel.theta_error);
         elseif missionPhase == 3
             tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
-            fprintf('Tool position error (m): %.3f\n', tool_pos_error);
+            fprintf('Tool position error (m): %.3f\n \n', tool_pos_error);
         end
     end
     % 7. Optional real-time slowdown
