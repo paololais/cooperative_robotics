@@ -18,24 +18,20 @@ unity = UnityInterface("127.0.0.1");
 % Define tasks    
 task_tool = TaskTool();
 task_vehicle_pos = TaskVehiclePosition();
-task_vehicle_mis1 = TaskVehicleMisalignment();
-task_vehicle_mis2 = TaskVehicleMisalignment();
+task_hor_attitude = TaskHorAttitude();
 task_vehicle_alt = TaskVehicleAltitude();
 task_vehicle_land = TaskVehicleLand();
 task_vehicle_heading = TaskVehicleHeading();
 task_stop_vehicle = TaskStopVehicle();
 
-task_set1 = { task_vehicle_alt, task_vehicle_mis1, task_vehicle_pos };   % Safe Navigation
-task_set2 = { task_vehicle_mis2, task_vehicle_heading, task_vehicle_land, task_vehicle_pos };  % Landing
+task_set1 = { task_vehicle_alt, task_hor_attitude, task_vehicle_pos };   % Safe Navigation
+task_set2 = { task_hor_attitude, task_vehicle_heading, task_vehicle_land, task_vehicle_pos };  % Landing
 task_set3 = { task_stop_vehicle, task_tool };  % Manipulation
 
 % Unifying task list
-%unified_task_list = {task_vehicle_alt, task_vehicle_mis2, task_stop_vehicle, ...
- %                   task_vehicle_mis1, task_vehicle_land, ...
-  %                  task_vehicle_heading, task_vehicle_pos, task_tool };
-unified_task_list = {task_vehicle_alt, task_vehicle_mis2, task_stop_vehicle, ...
-                    task_vehicle_mis1, task_vehicle_heading, task_vehicle_land, ...
-                    task_vehicle_pos, task_tool };
+unified_task_list = {task_vehicle_alt, task_stop_vehicle, ... % safety
+                    task_hor_attitude, task_vehicle_heading, ... % prerequisites
+                    task_vehicle_land, task_vehicle_pos, task_tool }; % action defining
 
 % Define actions and add to ActionManager
 actionManager = ActionManager();
@@ -50,8 +46,7 @@ disp(actionManager.actionsName)
 actionManager.setCurrentAction("Safe Navigation");
 
 % Define desired positions and orientations (world frame)
-w_arm_goal_position = [12.2025, 37.3748, -39.8860]';
-%w_arm_goal_position = [10.5 37.5 -38]';
+w_arm_goal_position = [12.2025, 37.3748, -39.8860]'; % nodule position
 w_arm_goal_orientation = [0, pi, pi/2];
 
 % Vehicle goal position and orientation
@@ -65,24 +60,39 @@ robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_p
 logger = SimulationLogger(ceil(endTime/dt)+1, robotModel, task_set1);
 idx=1;
 
+% Initialize mission phase: 1=Safe Navigation, 2=Landing, 3=Manipulation
+missionPhase = 1;
+
 % Main simulation loop
 for step = 1:sim.maxSteps
     % 1. Receive altitude from Unity
     robotModel.altitude = unity.receiveAltitude(robotModel);
 
     % Mission controller
-    if strcmp(actionManager.actionsName{actionManager.currentAction}, "Safe Navigation")
+    if missionPhase == 1
+    %if strcmp(actionManager.actionsName{actionManager.currentAction}, "Safe Navigation")
+        % Check if vehicle reached goal position
         xy_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
-        if xy_error < 0.5 && robotModel.altitude > 1.0
+        if xy_error < 0.2            
             disp("Safe Navigation complete - switch to Landing")
             actionManager.setCurrentAction("Landing");
+            missionPhase = 2;
         end
-    elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Landing")
+    elseif missionPhase == 2
         alt_error = abs(robotModel.altitude - 0.5);
         if alt_error < 0.1 && abs(robotModel.theta_error) < 0.1
             disp("Landing complete - switch to Manipulation")
             actionManager.setCurrentAction("Manipulation");
+            missionPhase = 3;
         end
+    elseif missionPhase == 3
+        % Check if manipulation is complete
+        tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
+        if tool_pos_error < 0.1
+            disp("Manipulation complete");
+            % Optionally, end simulation or hold position
+            % break;
+        end        
     end
 
     % 2. Compute control commands for current action
@@ -101,9 +111,16 @@ for step = 1:sim.maxSteps
     if mod(sim.loopCounter, round(1 / sim.dt)) == 0
         fprintf('t = %.2f s\n', sim.time);
         fprintf('alt = %.2f m\n', robotModel.altitude);
-        fprintf('Heading error (rad): %.3f\n', robotModel.theta_error);
+        if missionPhase == 1
+            pos_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
+            fprintf('Vehicle position error (m): %.3f\n', pos_error);        
+        elseif missionPhase == 2
+            fprintf('Heading error (rad): %.3f\n', robotModel.theta_error);
+        elseif missionPhase == 3
+            tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
+            fprintf('Tool position error (m): %.3f\n', tool_pos_error);
+        end
     end
-
     % 7. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end

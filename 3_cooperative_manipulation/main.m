@@ -6,8 +6,8 @@ addpath('./icat')
 addpath('./tasks')
 clc;clear;close all; 
 %Simulation Parameters
-dt = 0.01;
-end_time = 20;
+dt = 0.005;
+end_time = 10;
 
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
@@ -106,7 +106,7 @@ actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, ee_alt_R, jl_R, o
 
 % Track mission phases
 missionManager = MissionManager();
-missionManager.phase = 1;
+missionManager.missionPhase = 1;
 
 % Initial bias for cooperation weights
 mu0 = 0.2;
@@ -136,12 +136,12 @@ for t = 0:dt:end_time
     [ql_dot_nc]=actionManagerL.computeICAT(coop_system.left_arm, dt);
     [qr_dot_nc]=actionManagerR.computeICAT(coop_system.right_arm, dt);
     
-    if missionManager.phase == 1
+    if missionManager.missionPhase == 1
         % Phase 1: just use non-cooperative velocities
         ql_dot = ql_dot_nc;
         qr_dot = qr_dot_nc;
     
-    elseif missionManager.phase == 2
+    elseif missionManager.missionPhase == 2
         % RIGID BODY CONSTRAINT
         % Reference generator: desired object twist
 
@@ -180,7 +180,7 @@ for t = 0:dt:end_time
         [ql_dot] = actionManagerL_coop.computeICAT(coop_system.left_arm, dt);
         [qr_dot] = actionManagerR_coop.computeICAT(coop_system.right_arm, dt);
     
-    elseif missionManager.phase == 3
+    elseif missionManager.missionPhase == 3
         % Phase 3: just use non-cooperative velocities
         ql_dot = ql_dot_nc;
         qr_dot = qr_dot_nc;      
@@ -195,7 +195,9 @@ for t = 0:dt:end_time
     % 7. Loggging
     logger_left.update(coop_system.time,coop_system.loopCounter)
     logger_right.update(coop_system.time,coop_system.loopCounter)
-    coop_system.time;
+    if mod(coop_system.loopCounter, round(1 / coop_system.dt)) == 0
+        fprintf('t = %.2f s\n', coop_system.time);        
+    end
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end

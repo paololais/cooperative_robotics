@@ -1,4 +1,5 @@
-classdef TaskVehicleMisalignment < Task   
+classdef TaskHorAttitude < Task
+    % Horizontal Attitude
     properties
     end
     methods

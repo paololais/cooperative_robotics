@@ -1,11 +1,12 @@
 classdef MissionManager < handle
     properties
         pos_threshold = 0.01;   % meters
-        ang_threshold = 0.1;    % radians (approximately 5.7 degrees)
-        phase = 1; % 1: Reaching, 2: Rigid Constraint, 3: Stop Motion
+        ang_threshold = 0.1;    % radians
         % flags for phase transition
         phase_rigid_constraint_flag = false;
         phase_stop_motion_flag = false;
+
+        missionPhase = 1; % 1=GoTo, 2=CooperativeManipulation, 3=StopMotion
     end
 
     methods
@@ -14,8 +15,7 @@ classdef MissionManager < handle
         end
 
         function updateMissionPhase(obj, actionManagerL, actionManagerR, coop_system)
-            if strcmp(actionManagerL.actionsName{actionManagerL.currentAction}, "Go To Left") && ...
-                strcmp(actionManagerR.actionsName{actionManagerR.currentAction}, "Go To Right")                
+            if obj.missionPhase == 1              
                 % PHASE 1: Reaching grasping points                
                 R1_error = coop_system.left_arm.wTg(1:3, 1:3)' * coop_system.left_arm.wTt(1:3, 1:3);
                 R2_error = coop_system.right_arm.wTg(1:3, 1:3)' * coop_system.right_arm.wTt(1:3, 1:3);
@@ -52,10 +52,9 @@ classdef MissionManager < handle
                     actionManagerR.setBinaryTransition(true);
                     actionManagerR.setCurrentAction("Cooperative Manipulation Right");
                     obj.phase_rigid_constraint_flag = true;
-                    obj.phase = 2;
+                    obj.missionPhase = 2;
                 end
-            elseif strcmp(actionManagerL.actionsName{actionManagerL.currentAction}, "Cooperative Manipulation Left") && ...
-                    strcmp(actionManagerR.actionsName{actionManagerR.currentAction}, "Cooperative Manipulation Right")
+            elseif obj.missionPhase == 2
                 % PHASE 2: Rigid body grasping and object movement
                 % Check if object reached goal position
                 object_pos_error = norm(coop_system.left_arm.wTo(1:3,4) - coop_system.left_arm.wTog(1:3,4));
@@ -72,7 +71,7 @@ classdef MissionManager < handle
                     actionManagerL.setCurrentAction("Stop Motion left");
                     actionManagerR.setCurrentAction("Stop Motion right");
                     obj.phase_stop_motion_flag = true;
-                    obj.phase = 3;
+                    obj.missionPhase = 3;
                 end
             end
         end

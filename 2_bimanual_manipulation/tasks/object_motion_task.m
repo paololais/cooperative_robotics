@@ -16,11 +16,11 @@ classdef object_motion_task < Task
             [v_ang, v_lin] = CartError(robot.wTog, robot.wTo);
 
             % Desired object velocity
-            obj.xdotbar = 0.2*[v_ang; v_lin];
+            obj.xdotbar = 1.0*[v_ang; v_lin];
 
             % Saturation
-            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.3);
-            obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.3);
+            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.5);
+            obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.5);
         end
         
         function updateJacobian(obj, robot_system)

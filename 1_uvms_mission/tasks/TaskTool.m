@@ -7,10 +7,10 @@ classdef TaskTool < Task
     methods
         function updateReference(obj, robot)
             [v_ang, v_lin] = CartError(robot.vTg , robot.vTt);
-            obj.xdotbar = 0.2 * [v_ang; v_lin];
+            obj.xdotbar = 0.4 * [v_ang; v_lin];
             % limit the requested velocities...
-            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.2);
-            obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.2);
+            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.4);
+            obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.4);
         end
         function updateJacobian(obj, robot)
             bJe = RobustJacobian(robot.q);

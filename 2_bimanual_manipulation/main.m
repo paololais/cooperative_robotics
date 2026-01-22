@@ -7,8 +7,8 @@ addpath('./tasks')
 clc; clear; close all;
 
 %Simulation Parameters
-dt = 0.01;
-end_time = 40;
+dt = 0.005;
+end_time = 10;
 
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
@@ -85,6 +85,8 @@ disp(actionManager.actionsName)
 
 % Track mission phases
 missionManager = MissionManager();
+missionManager.missionPhase = 1;
+
 %Initiliaze robot interface
 robot_udp=UDP_interface(real_robot);
 
@@ -111,15 +113,18 @@ for t = 0:dt:end_time
 
     % 4. Step the simulator (integrate velocities)
     bm_sim.sim(q_dot);
-    %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
-    %fprintf("right arm altitude = %.3f m\n", bm_sim.right_arm.alt);
     
     % 5. Send updated state to Pybullet
     robot_udp.send(t,bm_sim)
-
+    
     % 6. Lggging
     logger.update(bm_sim.time,bm_sim.loopCounter)
-    bm_sim.time;
+    if mod(bm_sim.loopCounter, round(1 / bm_sim.dt)) == 0
+        fprintf('t = %.2f s\n', bm_sim.time);
+        %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
+        %fprintf("right arm altitude = %.3f m\n", bm_sim.right_arm.alt);
+    end
+
     % 7. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end

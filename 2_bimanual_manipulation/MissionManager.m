@@ -5,6 +5,8 @@ classdef MissionManager < handle
         % flags for phase transition
         phase_rigid_constraint_flag = false;
         phase_stop_motion_flag = false;
+
+        missionPhase = 1; % 1=GoToPosition, 2=Bimanual Manipulation, 3=Stop Motion
     end
 
     methods
@@ -13,7 +15,7 @@ classdef MissionManager < handle
         end
 
         function updateMissionPhase(obj, actionManager, bm_sim)
-            if strcmp(actionManager.actionsName{actionManager.currentAction}, "Go To Position")
+            if obj.missionPhase == 1
                 % PHASE 1: Reaching grasping points
                 R1_error = bm_sim.left_arm.wTg(1:3, 1:3)' * bm_sim.left_arm.wTt(1:3, 1:3);
                 R2_error = bm_sim.right_arm.wTg(1:3, 1:3)' * bm_sim.right_arm.wTt(1:3, 1:3);
@@ -48,8 +50,9 @@ classdef MissionManager < handle
                     actionManager.setBinaryTransition(true);
                     actionManager.setCurrentAction("Bimanual Manipulation");
                     obj.phase_rigid_constraint_flag = true;
+                    obj.missionPhase = 2;
                 end
-            elseif strcmp(actionManager.actionsName{actionManager.currentAction}, "Bimanual Manipulation")
+            elseif obj.missionPhase == 2
                 % PHASE 2: Rigid body grasping and object movement
                 % Check if object reached goal position
                 object_pos_error = norm(bm_sim.left_arm.wTo(1:3,4) - bm_sim.left_arm.wTog(1:3,4));
@@ -63,7 +66,8 @@ classdef MissionManager < handle
                     
                     actionManager.setBinaryTransition(false);
                     actionManager.setCurrentAction("Stop Motion");
-                    obj.phase_stop_motion_flag = true;                    
+                    obj.phase_stop_motion_flag = true;       
+                    obj.missionPhase = 3;             
                 end
             end
         end
