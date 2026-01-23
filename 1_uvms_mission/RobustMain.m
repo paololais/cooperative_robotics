@@ -24,14 +24,16 @@ task_vehicle_land = TaskVehicleLand();
 task_vehicle_heading = TaskVehicleHeading();
 task_stop_vehicle = TaskStopVehicle();
 
-task_set1 = { task_vehicle_alt, task_hor_attitude, task_vehicle_pos };   % Safe Navigation
+task_vehicle_ori = TaskOrient();
+
+task_set1 = { task_vehicle_alt, task_vehicle_ori, task_vehicle_pos };   % Safe Navigation
 task_set2 = { task_hor_attitude, task_vehicle_heading, task_vehicle_land, task_vehicle_pos };  % Landing
 task_set3 = { task_stop_vehicle, task_tool };  % Manipulation
 
 % Unifying task list
 unified_task_list = {task_vehicle_alt, task_stop_vehicle, ... % safety
     task_hor_attitude, task_vehicle_heading, ... % prerequisites
-    task_vehicle_land, task_vehicle_pos, task_tool }; % action defining
+    task_vehicle_land, task_vehicle_ori, task_vehicle_pos, task_tool }; % action defining
 
 % Define actions and add to ActionManager
 actionManager = ActionManager();
@@ -79,10 +81,12 @@ for step = 1:sim.maxSteps
     % Mission controller
     if missionPhase == 1
         xy_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
-        if xy_error < 0.2
-            disp("Safe Navigation complete - switch to Landing")
-            actionManager.setCurrentAction("Landing");
-            missionPhase = 2;
+        ori_error = task_vehicle_ori.error;
+
+        if xy_error < 0.1 && ori_error < 0.1
+        disp("Safe Navigation complete (Pos & Ori OK) - switch to Landing")
+        actionManager.setCurrentAction("Landing");
+        missionPhase = 2;
         end
     elseif missionPhase == 2
         alt_error = abs(robotModel.altitude - 0.5);
@@ -133,9 +137,26 @@ for step = 1:sim.maxSteps
     logger.update(sim.time, sim.loopCounter);
 
     % 6. Optional debug prints
-    if mod(sim.loopCounter, round(1 / sim.dt)) == 0
-        fprintf('t = %.2f s\n', sim.time);
-        fprintf('alt = %.2f m\n', robotModel.altitude);
+    if mod(sim.loopCounter, round(0.3 / sim.dt)) == 0
+        fprintf('--- t = %.2f s ---\n', sim.time);
+        fprintf('Alt: %.2f m\n', robotModel.altitude);
+        
+        % Estrai orientamento attuale (RPY) dallo stato eta
+        current_roll  = robotModel.eta(4);
+        current_pitch = robotModel.eta(5);
+        current_yaw   = robotModel.eta(6);
+        
+        % Stampa confronto Attuale vs Goal
+        fprintf('ORIENTAMENTO [Roll, Pitch, Yaw] (rad):\n');
+        fprintf('  Attuale: [%.4f,  %.4f,  %.4f]\n', current_roll, current_pitch, current_yaw);
+        fprintf('  Goal:    [%.4f,  %.4f,  %.4f]\n', w_vehicle_goal_orientation(1), w_vehicle_goal_orientation(2), w_vehicle_goal_orientation(3));
+        
+        % Calcola e stampa errore semplice
+        err_r = w_vehicle_goal_orientation(1) - current_roll;
+        err_p = w_vehicle_goal_orientation(2) - current_pitch;
+        err_y = w_vehicle_goal_orientation(3) - current_yaw;
+        fprintf('  Errore:  [%.4f,  %.4f,  %.4f]\n', err_r, err_p, err_y);
+        
         if missionPhase == 1
             pos_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
             fprintf('Vehicle position error (m): %.3f\n\n', pos_error);
