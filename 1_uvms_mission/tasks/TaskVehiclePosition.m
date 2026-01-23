@@ -11,8 +11,8 @@ classdef TaskVehiclePosition < Task
     methods
         function updateReference(obj, robot)
             [~, lin] = CartError(robot.wTgv , robot.wTv);
-            obj.xdotbar = - 0.5 * robot.vTw(1:3,1:3) * lin;
-            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.5);
+            obj.xdotbar = - 0.8 * robot.vTw(1:3,1:3) * lin;
+            obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.8);
         end
 
         function updateJacobian(obj, robot)

@@ -29,8 +29,8 @@ classdef TaskVehicleHeading < Task
             cos_theta = dot(w_xv, w_xd);
             theta = atan2(sin_theta, cos_theta);
 
-            obj.xdotbar = 0.6 * theta * n;
-            obj.xdotbar = Saturate(obj.xdotbar, 0.5);
+            obj.xdotbar = 0.4 * theta * n;
+            obj.xdotbar = Saturate(obj.xdotbar, 0.3);
 
             robot.theta_error = theta;  % store heading error in robot model
         end

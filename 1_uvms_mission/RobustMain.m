@@ -62,12 +62,14 @@ idx=1;
 
 % Initialize mission phase: 1=Safe Navigation, 2=Landing, 3=Manipulation
 missionPhase = 1;
-manFlag = false; % manipulation complete flag
+manFlag = false; % manipulation complete flag for logging
+goalReset = false;
 
 % compute arm max reach
-% rmax = computeArmMaxReach(robotModel);
-% fprintf('arm max reach (m): %.3f\n', rmax);
-rmax = 1.856; % precomputed value using computeArmMaxReach function
+%rmax = computeArmMaxReach(robotModel);
+%fprintf('arm max reach (m): %f\n', rmax);
+%rmax = 1.855736; % precomputed value using computeArmMaxReach function
+rmax = 1.3; % set smaller value to force vehicle repositioning
 
 % Main simulation loop
 for step = 1:sim.maxSteps
@@ -85,20 +87,23 @@ for step = 1:sim.maxSteps
     elseif missionPhase == 2
         alt_error = abs(robotModel.altitude - 0.5);
         % to check if nodule is reachable
-        w_vehicle_position = robotModel.eta(1:3);
-        d_vec = w_arm_goal_position - w_vehicle_position;
+        w_vehicle_position = robotModel.eta(1:2);
+        d_vec = w_arm_goal_position(1:2) - w_vehicle_position;
         d = norm(d_vec);
+
+        xy_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
 
         if alt_error < 0.1 && abs(robotModel.theta_error) < 0.1
             % Vehicle is landed and aligned
-            if d > rmax
+            if d > rmax && ~goalReset
+                goalReset = true;  
                 % Nodule still outside workspace -> adjust vehicle goal
                 fprintf('Adjusting vehicle goal to guarantee nodule reachability\n');
                 correction = d_vec * (d - rmax)/d;
-                w_vehicle_goal_position = w_vehicle_goal_position + correction;
+                w_vehicle_goal_position(1:2) = w_vehicle_goal_position(1:2) + correction;
                 robotModel.setGoal(w_arm_goal_position, w_arm_goal_orientation, w_vehicle_goal_position, w_vehicle_goal_orientation);
                 % stay in missionPhase 2 until vehicle reaches new goal
-            else
+            elseif xy_error < 0.2
                 % Nodule is within reach -> switch to Manipulation
                 disp("Landing complete - switch to Manipulation")
                 actionManager.setCurrentAction("Manipulation");
@@ -107,7 +112,7 @@ for step = 1:sim.maxSteps
         end
     elseif missionPhase == 3
         tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
-        if tool_pos_error < 0.1 && ~manFlag
+        if tool_pos_error < 0.01 && ~manFlag
             manFlag = true;
             disp("Manipulation complete");
             % Optionally, end simulation or hold position
@@ -133,9 +138,10 @@ for step = 1:sim.maxSteps
         fprintf('alt = %.2f m\n', robotModel.altitude);
         if missionPhase == 1
             pos_error = norm(robotModel.eta(1:2) - w_vehicle_goal_position(1:2));
-            fprintf('Vehicle position error (m): %.3f\n', pos_error);
+            fprintf('Vehicle position error (m): %.3f\n\n', pos_error);
         elseif missionPhase == 2
             fprintf('Heading error (rad): %.3f\n', robotModel.theta_error);
+            fprintf('Vehicle position error (m): %.3f\n\n', pos_error);
         elseif missionPhase == 3
             tool_pos_error = norm(robotModel.wTt(1:3,4) - robotModel.wTg(1:3,4));
             fprintf('Tool position error (m): %.3f\n \n', tool_pos_error);

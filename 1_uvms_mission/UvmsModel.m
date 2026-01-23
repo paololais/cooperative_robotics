@@ -108,6 +108,8 @@ classdef UvmsModel < handle
             obj.wRgv = rotation(vehicleOrientation(1), vehicleOrientation(2), vehicleOrientation(3));
             obj.vehicleGoalPosition = vehiclePosition;
             obj.wTgv = [obj.wRgv obj.vehicleGoalPosition; 0 0 0 1];
+
+            fprintf('Set new vehicle goal [%f,%f,%f]\n', obj.vehicleGoalPosition(1), obj.vehicleGoalPosition(2), obj.vehicleGoalPosition(3));
         end
 
         function updateTransformations(obj)
