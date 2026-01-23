@@ -43,7 +43,7 @@ arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/6, 0));
 arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
-wTog=[rotation(0,0,0) [0.8, 0.0, 0.40]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.9, -0.65, 0.10]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -127,8 +127,6 @@ for t = 0:dt:end_time
         end
             %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
         %fprintf("right arm altitude = %.3f m\n", bm_sim.right_arm.alt);
-        fprintf("Right arm joint angles [%f, %f, %f, %f, %f, %f, %f] rad\n", bm_sim.right_arm.q);
-        fprintf("Left arm joint angles [%f, %f, %f, %f, %f, %f, %f] rad\n", bm_sim.left_arm.q);
     end
 
     % 7. Optional real-time slowdown
@@ -138,7 +136,6 @@ end
 %of tasks
 action=2;
 tasks=[1,5,6];
-tasks=[2,3];
-tasks=[4,5];
+tasks=
 logger.plotAll(action,tasks);
 end
