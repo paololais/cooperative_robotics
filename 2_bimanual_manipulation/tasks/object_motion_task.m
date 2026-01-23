@@ -23,7 +23,7 @@ classdef object_motion_task < Task
             obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.5);
 
             robot.dist_to_goal=norm(v_lin);
-            robot.rot_to_goal=norm(v_ang;);
+            robot.rot_to_goal=norm(v_ang);
         end
         
         function updateJacobian(obj, robot_system)
