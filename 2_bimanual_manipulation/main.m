@@ -29,7 +29,7 @@ arm2=panda_arm(model,wTb2);
 bm_sim=bimanual_sim(dt,arm1,arm2,end_time);
 
 %Define Object Shape and origin Frame
-obj_length = 0.12;
+obj_length = 0.10;
 w_obj_pos = [0.5 0 0.59]';
 w_obj_ori = rotation(0,0,0);
 
@@ -121,7 +121,11 @@ for t = 0:dt:end_time
     logger.update(bm_sim.time,bm_sim.loopCounter)
     if mod(bm_sim.loopCounter, round(1 / bm_sim.dt)) == 0
         fprintf('t = %.2f s\n', bm_sim.time);
-        %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
+        if missionManager.missionPhase == 2
+            fprintf('Left arm distance to goal = %.3f m\n', bm_sim.left_arm.dist_to_goal);
+            fprintf('Right arm distance to goal = %.3f m\n', bm_sim.right_arm.dist_to_goal);
+        end
+            %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
         %fprintf("right arm altitude = %.3f m\n", bm_sim.right_arm.alt);
     end
 
@@ -130,7 +134,7 @@ for t = 0:dt:end_time
 end
 %Display joint position and velocity, Display for a given action, a number
 %of tasks
-action=1;
-tasks=[1];
+action=2;
+tasks=[1,5,6];
 logger.plotAll(action,tasks);
 end
