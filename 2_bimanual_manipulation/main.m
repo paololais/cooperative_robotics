@@ -127,7 +127,7 @@ for t = 0:dt:end_time
             fprintf('Left arm distance to goal = %.3f m\n', bm_sim.left_arm.dist_to_goal);
             fprintf('Right arm distance to goal = %.3f m\n', bm_sim.right_arm.dist_to_goal);
         end
-            %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
+        %fprintf("left arm altitude = %.3f m\n", bm_sim.left_arm.alt);
         %fprintf("right arm altitude = %.3f m\n", bm_sim.right_arm.alt);
         fprintf("Right arm joint angles [%f, %f, %f, %f, %f, %f, %f] rad\n", bm_sim.right_arm.q);
         fprintf("Left arm joint angles [%f, %f, %f, %f, %f, %f, %f] rad\n", bm_sim.left_arm.q);
@@ -138,8 +138,8 @@ for t = 0:dt:end_time
 end
 %Display joint position and velocity, Display for a given action, a number
 %of tasks
-action=2;
-tasks=[1];
+action=1;
+tasks=[2];
 logger.plotAll(action,tasks);
 logger.plotQ4();
 end

@@ -83,11 +83,7 @@ classdef SimulationLogger < handle
                     title([strcat('Robot'," ",obj.action_set.actions{action}{task(i)}.ID," ",'Task'," ",num2str(task(i))," ",obj.action_set.actions{action}{task(i)}.task_name)]);
                 end
             end
-
-
-            % ---------------------------------------------------------
-        % UPDATED PLOTTING FUNCTION (Includes Manipulability & Joint Vels)
-        % ---------------------------------------------------------
+            
         function plotQ4(obj)
             fprintf('Replaying simulation data for Report plots...\n');
             
@@ -101,8 +97,6 @@ classdef SimulationLogger < handle
             vel_L_norm = zeros(1, valid_steps);
             vel_R_norm = zeros(1, valid_steps);
             vel_obj_ref_norm = zeros(1, valid_steps);
-            manip_L = zeros(1, valid_steps); % Manipulability Left
-            manip_R = zeros(1, valid_steps); % Manipulability Right
             
             idx_action = 2;       
             idx_task_obj = 6;     
@@ -121,48 +115,23 @@ classdef SimulationLogger < handle
                 vel_L_norm(k) = norm(v_L(1:3));
                 vel_R_norm(k) = norm(v_R(1:3));
                 
-                % 3. Compute Manipulability (Yoshikawa measure)
-                % w = sqrt(det(J * J'))
-                J_L = obj.robot.left_arm.wJt;
-                J_R = obj.robot.right_arm.wJt;
-                manip_L(k) = sqrt(det(J_L * J_L'));
-                manip_R(k) = sqrt(det(J_R * J_R'));
-
-                % 4. Reference
+                
+                % 3. Reference
                 try
                     ref_vel = obj.xdotbar_task{idx_action, idx_task_obj, k};
                     if ~isempty(ref_vel), vel_obj_ref_norm(k) = norm(ref_vel(4:6)); end
                 catch 
                 end
             end
-    
-            % --- PLOT 4: Manipulability (NEW) ---
-            figure('Name', 'Report: Manipulability');
-            plot(t_plot, manip_L, 'b', 'LineWidth', 1.5, 'DisplayName', 'Left Arm');
-            hold on;
-            plot(t_plot, manip_R, 'r', 'LineWidth', 1.5, 'DisplayName', 'Right Arm');
-            yline(0, 'k-', 'Singularity');
-            grid on; legend;
-            xlabel('Time [s]'); ylabel('Manipulability Index');
-            title('System Manipulability (Singularity Check)');
-            
 
-            % --- PLOT 5: Joint Velocities (NEW) ---
-            figure('Name', 'Report: Joint Velocities (Left)');
-            plot(t_plot, obj.qdotl(:, 1:valid_steps)', 'LineWidth', 1);
-            grid on;
-            xlabel('Time [s]'); ylabel('Rad/s');
-            title('Left Arm Joint Velocities');
-            
-
-            % --- PLOT 6: Constraint (Standard) ---
+            % PLOT 4: Constraint (Standard)
             figure('Name', 'Report: Constraint');
             plot(t_plot, dist_tools, 'LineWidth', 2);
             grid on; xlabel('Time [s]'); ylabel('Distance [m]');
             title('Distance between Tool Frames');
             yline(mean(dist_tools(t_plot>2)), '--r');
     
-            % --- PLOT 7: Velocity Comparison (Standard) ---
+            %PLOT 5: Velocity Comparison (Standard)
             figure('Name', 'Report: Velocity Comparison');
             hold on;
             plot(t_plot, vel_obj_ref_norm, 'r', 'LineWidth', 2, 'DisplayName', 'Desired Obj Vel');

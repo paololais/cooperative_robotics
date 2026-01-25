@@ -29,8 +29,6 @@ classdef ActionManager < handle
         
         function setBinaryTransition(obj, isBinary)
             % Set binary transition mode for the next action switch
-            % Binary: no smooth transition (activation 0 or 1)
-            % Smooth: Bell-shaped function transition over transitionTime
             obj.isBinaryTransition = isBinary;
         end
 
