@@ -8,7 +8,10 @@ clc;clear;close all;
 %Simulation Parameters
 dt = 0.005;
 end_time = 10;
-
+% Initialize variables to avoid 'undefined' errors in Phase 1/3
+xdot_ref = zeros(6,1);
+x_dot_t_a = zeros(6,1);
+x_dot_t_b = zeros(6,1);
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
 
@@ -192,12 +195,18 @@ for t = 0:dt:end_time
     % 6. Send updated state to Pybullet
     robot_udp.send(t,coop_system)
 
-    % 7. Loggging
-    logger_left.update(coop_system.time,coop_system.loopCounter)
-    logger_right.update(coop_system.time,coop_system.loopCounter)
+    
     if mod(coop_system.loopCounter, round(1 / coop_system.dt)) == 0
         fprintf('t = %.2f s\n', coop_system.time);        
     end
+
+    % 7. Logging
+    % Update Left Logger (Pass Reference and Left Non-Coop Velocity)
+    logger_left.update(coop_system.time, coop_system.loopCounter, xdot_ref, x_dot_t_a);
+    
+    % Update Right Logger (Pass Reference and Right Non-Coop Velocity)
+    logger_right.update(coop_system.time, coop_system.loopCounter, xdot_ref, x_dot_t_b);
+    
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);
 end
@@ -207,5 +216,7 @@ end
 % tasks=[1];
 logger_left.plotAll();
 logger_right.plotAll();
-
+% NEW: Velocity Comparison Plots
+logger_left.plotVelocityComparison('Left Arm');
+logger_right.plotVelocityComparison('Right Arm');
 end

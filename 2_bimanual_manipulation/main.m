@@ -44,6 +44,7 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.65, -0.35, 0.28]'; 0 0 0 1];
+%wTog=[rotation(0,0,0) [0.65, -0.35, 0]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -68,6 +69,7 @@ stop_velocities_task_R = stop_velocities_task("R","STOP_VEL_R");
 %Actions for each phase: go to phase, coop_motion phase, end_motion phase
 go_to = {ee_alt_L, ee_alt_R, jl_L, jl_R, left_tool_task, right_tool_task};
 bimanual_manipulation = {rigid_constraint, ee_alt_L, ee_alt_R, jl_L, jl_R, object_task_l, object_task_r};
+% bimanual_manipulation = {ee_alt_L, ee_alt_R, jl_L, jl_R, object_task_l, object_task_r};
 stop_motion = {ee_alt_L, ee_alt_R, stop_velocities_task_R, stop_velocities_task_L};
 
 % Unifying task list
@@ -133,4 +135,5 @@ end
 action=1;
 tasks=[1];
 logger.plotAll(action,tasks);
+logger.plotQ4();
 end
