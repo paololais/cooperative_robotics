@@ -1,5 +1,6 @@
 %% 
-classdef TaskVehicleLand < Task   
+classdef TaskVehicleLand < Task
+% Vehicle landing task
     properties
     end
 
@@ -19,7 +20,7 @@ classdef TaskVehicleLand < Task
         function updateJacobian(obj, robot)
             % Jacobian maps z-velocity to altitude change
             % [0 0 1] selects z component of linear velocity
-            obj.J = [0 0 1] * [zeros(3,7), eye(3), zeros(3,3)];
+            obj.J = [0 0 1] * [zeros(3,7), robot.wTv(1:3,1:3), zeros(3,3)];
         end
         
         function updateActivation(obj, robot)

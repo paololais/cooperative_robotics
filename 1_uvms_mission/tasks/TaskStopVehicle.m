@@ -1,4 +1,5 @@
 classdef TaskStopVehicle < Task
+% Vehicle stop motion task
     methods
         function updateReference(obj, robot)
             obj.xdotbar = zeros(6,1); % 0 final velocity

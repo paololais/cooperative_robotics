@@ -1,4 +1,5 @@
-classdef TaskVehicleHeading < Task   
+classdef TaskVehicleHeading < Task  
+% Vehicle longitudinal alignment to nodule task
     methods
         function updateReference(obj, robot)
             % Vehicle x-axis
@@ -37,7 +38,7 @@ classdef TaskVehicleHeading < Task
 
         function updateJacobian(obj, robot)
             % Jacobian maps vehicle angular velocities to heading change
-            obj.J = [zeros(3,10) eye(3)]; % last 3 vehicle DOFs = angular velocities
+            obj.J = [zeros(3,10) robot.wTv(1:3,1:3)]; % last 3 vehicle DOFs = angular velocities
         end
 
         function updateActivation(obj, robot)
