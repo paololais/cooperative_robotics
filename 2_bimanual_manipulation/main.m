@@ -139,9 +139,7 @@ end
 %Display joint position and velocity, Display for a given action, a number
 %of tasks
 action=2;
-tasks=[1,5,6];
-tasks=[2,3];
-tasks=[4,5];
+tasks=[1];
 logger.plotAll(action,tasks);
 logger.plotQ4();
 end
