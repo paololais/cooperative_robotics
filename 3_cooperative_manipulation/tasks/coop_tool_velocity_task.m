@@ -8,7 +8,7 @@ classdef coop_tool_velocity_task < Task
         end
 
         function updateReference(obj, robot)
-            % NON-reactive: reference comes from cooperation layer
+            % reference comes from cooperation layer
             obj.xdotbar = robot.xdot_coop;   % 6x1
         end
 

@@ -6,7 +6,6 @@ classdef TaskStopVehicle < Task
         end
 
         function updateJacobian(obj, robot)
-            % 3 lin + 3 ang, 7 braccio + 6 veicolo
             obj.J = [zeros(6,7), eye(6)]; 
         end
         
