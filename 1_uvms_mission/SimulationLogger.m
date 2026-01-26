@@ -9,6 +9,11 @@ classdef SimulationLogger < handle
         xdotbar_task % reference velocities for tasks (cell array)
         robot        % robot model
         task_set     % set of tasks
+        altitude     % vehicle altitude
+        heading
+        target_distance
+        tool_pos_error
+
     end
 
     methods
@@ -21,6 +26,10 @@ classdef SimulationLogger < handle
             obj.q_dot = zeros(7, maxLoops);
             obj.eta = zeros(6, maxLoops);
             obj.v_nu = zeros(6, maxLoops);
+            obj.altitude = zeros(1, maxLoops);
+            obj.heading = zeros(1, maxLoops);
+            obj.target_distance = zeros(1, maxLoops);
+            obj.tool_pos_error = zeros(1, maxLoops);
 
             % Store the diagonal of each activation matrix
             maxDiagSize = max(cellfun(@(t) size(t.A,1), task_set));
@@ -37,6 +46,14 @@ classdef SimulationLogger < handle
             obj.q_dot(:, loop) = obj.robot.q_dot;
             obj.eta(:, loop) = obj.robot.eta;
             obj.v_nu(:, loop) = obj.robot.v_nu;
+            if(~isempty(obj.robot.altitude))
+                obj.altitude(loop) = obj.robot.altitude;
+            end
+            if(~isempty(obj.robot.theta_error))
+                obj.heading(loop) = obj.robot.theta_error;
+            end
+            obj.target_distance(loop) = norm(obj.robot.eta(1:2) - obj.robot.wTgv(1:2,4));
+            obj.tool_pos_error(loop) = norm(obj.robot.wTt(1:3,4) - obj.robot.wTg(1:3,4));
 
             % Store task activations (diagonal only) and reference velocities
             for i = 1:length(obj.task_set)
@@ -69,8 +86,38 @@ classdef SimulationLogger < handle
             for i = 1:size(obj.a,3)
                 subplot(size(obj.a,3),1,i);
                 plot(obj.t, squeeze(obj.a(:, :, i))', 'LineWidth', 1);
+                xlabel('Time [s]');
                 title(['Task ', num2str(i), ' Activations (diagonal)']);
             end
+
+            % Additional plots
+            figure(4);
+            plot(obj.t, obj.altitude, 'LineWidth', 1.5);
+            xlabel('Time [s]');
+            ylabel('Altitude [m]');
+            grid on;
+            title('Vehicle altitude');
+
+            figure(5);
+            plot(obj.t, obj.heading, 'LineWidth', 1.5);
+            xlabel('Time [s]');
+            ylabel('Heading error [rad]');
+            grid on;
+            title('Vehicle heading error');
+
+            figure(6);
+            plot(obj.t, obj.target_distance, 'LineWidth', 1.5);
+            xlabel('Time [s]');
+            ylabel('Distance to target [m]');
+            grid on;
+            title('Vehicle-to-target distance');
+
+            figure(7);
+            plot(obj.t, obj.tool_pos_error, 'LineWidth', 1.5);
+            xlabel('Time [s]');
+            ylabel('Tool position error [m]');
+            grid on;
+            title('Tool position error');
         end
     end
 end
