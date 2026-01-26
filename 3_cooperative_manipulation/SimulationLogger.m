@@ -9,6 +9,11 @@ classdef SimulationLogger < handle
         xdot_nc      % Non-Cooperative Cartesian Velocity (6xN)
         xdot_actual  % Actual/Cooperative Cartesian Velocity (6xN)
         
+        % Tool distance tracking
+        tool_pos_left   % Left tool position (3xN)
+        tool_pos_right  % Right tool position (3xN)
+        tool_distance   % Distance between tools (1xN)
+        
         robot        % robot model
     end
 
@@ -24,6 +29,11 @@ classdef SimulationLogger < handle
             obj.xdot_desired = zeros(6, maxLoops);
             obj.xdot_nc = zeros(6, maxLoops);
             obj.xdot_actual = zeros(6, maxLoops);
+            
+            % Initialize tool distance tracking
+            obj.tool_pos_left = zeros(3, maxLoops);
+            obj.tool_pos_right = zeros(3, maxLoops);
+            obj.tool_distance = zeros(1, maxLoops);
         end
 
         % Update function now requires extra arguments for the velocities
@@ -40,6 +50,26 @@ classdef SimulationLogger < handle
             % Compute actual Cartesian velocity (J * qdot)
             % This represents the final Cooperative velocity executed by the robot
             obj.xdot_actual(:, loop) = obj.robot.wJt * obj.robot.qdot;
+        end
+        
+        % Update function for dual-arm scenarios to track tool distance
+        function updateDualArm(obj, t, loop, left_arm, right_arm, xdot_ref, xdot_nc_val)
+            % Store basic robot state
+            obj.t(loop) = t;
+            
+            % Store velocity analysis data
+            obj.xdot_desired(:, loop) = xdot_ref;
+            obj.xdot_nc(:, loop) = xdot_nc_val;
+            
+            % Extract tool positions
+            left_pos = left_arm.wTt(1:3, 4);   % Left tool position
+            right_pos = right_arm.wTt(1:3, 4);  % Right tool position
+
+            obj.tool_pos_left(:, loop) = left_pos;
+            obj.tool_pos_right(:, loop) = right_pos;
+            
+            % Compute distance between tools
+            obj.tool_distance(loop) = norm(left_pos - right_pos);
         end
 
         function plotAll(obj)
@@ -90,6 +120,28 @@ classdef SimulationLogger < handle
                 end
             end
             sgtitle([armName ' Velocity Comparison']);
+        end
+        
+        function plotToolDistance(obj)
+            figure('Name', 'Tool-to-Tool Distance');
+            
+            plot(obj.t, obj.tool_distance, 'b', 'LineWidth', 2);
+            xlabel('Time [s]');
+            ylabel('Distance [m]');
+            title('Distance Between Left and Right Tool End-Effectors');
+            grid on;
+            
+            % Add some statistics to the plot
+            hold on;
+            min_dist = min(obj.tool_distance);
+            max_dist = max(obj.tool_distance);
+            mean_dist = mean(obj.tool_distance);
+            
+            yline(mean_dist, '--r', sprintf('Mean: %.3f m', mean_dist), 'LineWidth', 1.5);
+            yline(min_dist, '--g', sprintf('Min: %.3f m', min_dist), 'LineWidth', 1.5);
+            yline(max_dist, '--m', sprintf('Max: %.3f m', max_dist), 'LineWidth', 1.5);
+            
+            legend('Distance', 'Mean', 'Min', 'Max', 'Location', 'best');
         end
     end
 end

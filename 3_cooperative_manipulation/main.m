@@ -43,7 +43,8 @@ arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/9, 0));
 arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
-wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
+%wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.65, -0.35, 3.4]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -73,8 +74,6 @@ stop_motion_L = {ee_alt_L, stop_velocities_task_L};
 stop_motion_R = {ee_alt_R, stop_velocities_task_R};
 
 % Unified Lists 
-% forse non servono dato che gestiamo le azioni singolarmente
-% e c'è distinzione parte non cooperativa e cooperativa
 unifiedTasksL={ee_alt_L, jl_L, left_tool_task, object_task_L, stop_velocities_task_L};
 unifiedTasksR={ee_alt_R, jl_R, right_tool_task, object_task_R, stop_velocities_task_R};
 
@@ -150,18 +149,20 @@ for t = 0:dt:end_time
 
         % 4. TO DO: COOPERATION hierarchy
         % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
-        xdot_ref = coop_system.left_arm.compute_desired_refVelocity();
+        xdot_ref_l = coop_system.left_arm.compute_desired_refVelocity();
+        xdot_ref_r = coop_system.right_arm.compute_desired_refVelocity();
 
         % Share reference with both arms
-        coop_system.right_arm.xdot = xdot_ref;
+        coop_system.left_arm.xdot = xdot_ref_l;
+        coop_system.right_arm.xdot = xdot_ref_r;
 
         % Compute non-cooperative tool velocities
         x_dot_t_a = coop_system.left_arm.wJt * ql_dot_nc;
         x_dot_t_b = coop_system.right_arm.wJt * qr_dot_nc;
 
         % Compute weights        
-        mu_a = mu0 + norm(xdot_ref - x_dot_t_a);
-        mu_b = mu0 + norm(xdot_ref - x_dot_t_b);
+        mu_a = mu0 + norm(xdot_ref_l - x_dot_t_a);
+        mu_b = mu0 + norm(xdot_ref_r - x_dot_t_b);
 
         % Weighted cooperative velocity (xhat_dot)
         x_hat_dot = (mu_a*x_dot_t_a + mu_b*x_dot_t_b) / (mu_a + mu_b);
@@ -206,6 +207,8 @@ for t = 0:dt:end_time
     
     % Update Right Logger (Pass Reference and Right Non-Coop Velocity)
     logger_right.update(coop_system.time, coop_system.loopCounter, xdot_ref, x_dot_t_b);
+
+    logger_left.updateDualArm(coop_system.time, coop_system.loopCounter, coop_system.left_arm, coop_system.right_arm, xdot_ref, x_dot_t_a);
     
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);
@@ -219,4 +222,5 @@ logger_right.plotAll();
 % NEW: Velocity Comparison Plots
 logger_left.plotVelocityComparison('Left Arm');
 logger_right.plotVelocityComparison('Right Arm');
+logger_left.plotToolDistance();
 end

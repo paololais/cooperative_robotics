@@ -1,7 +1,7 @@
-classdef joint_limits_task < Task   
-    %Tool position control for a single arm
+classdef joint_limits_task < Task
     properties
-
+         %Security buffer around joint limits
+        buffer = 0.17; 
     end
 
     methods
@@ -11,25 +11,38 @@ classdef joint_limits_task < Task
         end
 
         function updateReference(obj, robot)
-            q = robot.q;
-            qmin = robot.jlmin;
-            qmax = robot.jlmax;
-             
-            margin = 0.2;   % rad
-            k = 0.5;
-            qdot_ref = zeros(7,1);
+            %  initialize reference velocity vector
+            obj.xdotbar = zeros(7,1);
+            
+            % Gain for repulsion effect
+            lambda = 1.0; 
 
-            for i = 1:7                
-                if q(i) < qmin(i) + margin
-                    fprintf("Joint limits min exceeded for joint %d with value=%f\n", i, q(i));
-                    qdot_ref(i) =  k * (qmin(i) + margin - q(i));
-                elseif q(i) > qmax(i) - margin
-                    fprintf("Joint limits max exceeded for joint %d with value=%f\n", i, q(i));
-                    qdot_ref(i) = -k * (q(i) - (qmax(i) - margin));
+            for i = 1:7
+                q = robot.q(i);
+                q_min = robot.jlmin(i);
+                q_max = robot.jlmax(i);
+                
+                % Activation thresholds
+                % danger zone MIN: da q_min a (q_min + buffer)
+                safe_min = q_min + obj.buffer;
+                
+                % danger zone MAX: da (q_max - buffer) a q_max
+                safe_max = q_max - obj.buffer;
+
+                % Repulsion logic
+                % if we are too close to the minimum, push towards safe_min
+                if q < safe_min
+                    obj.xdotbar(i) = lambda * (safe_min - q);
+                % if we are too close to the maximum, push towards safe_max
+                elseif q > safe_max
+                    obj.xdotbar(i) = lambda * (safe_max - q);
+                else
+                    obj.xdotbar(i) = 0;
                 end
             end
-    
-            obj.xdotbar = Saturate(qdot_ref, 0.5);   
+
+            % Safety saturation to avoid jumps
+            obj.xdotbar = Saturate(obj.xdotbar, 1.0);
         end
 
         function updateJacobian(obj,robot)
@@ -37,22 +50,26 @@ classdef joint_limits_task < Task
         end
 
         function updateActivation(obj, robot)
-            q = robot.q;
-            qmin = robot.jlmin;
-            qmax = robot.jlmax;
-        
-            margin = 0.2;
-        
-            A_diag = zeros(7,1);
-        
+            % A(i,i) = 1 if close to joint limit, 0 otherwise
+            activations = zeros(7,1);
+
             for i = 1:7
-                dist = min(q(i) - qmin(i), qmax(i) - q(i));
-        
-                % fully active at limit, inactive outside margin
-                A_diag(i) = DecreasingBellShapedFunction(0, margin, 0, 1, dist);
+                q = robot.q(i);
+                q_min = robot.jlmin(i);
+                q_max = robot.jlmax(i);
+                
+                % DecreasingBell for inferior limit
+                a_min = DecreasingBellShapedFunction(q_min, q_min + obj.buffer, 0, 1, q);
+                
+                % IncreasingBell for superior limit
+                a_max = IncreasingBellShapedFunction(q_max - obj.buffer, q_max, 0, 1, q);
+                
+                % The total activation is the sum (they don't overlap)
+                activations(i) = a_min + a_max;
             end
-        
-            obj.A = diag(A_diag);
+            
+            % Diagonal activation matrix
+            obj.A = diag(activations);
                     
         end
     end

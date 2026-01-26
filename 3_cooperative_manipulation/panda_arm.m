@@ -108,7 +108,7 @@ classdef panda_arm < handle
         
         function [xdotbar] = compute_desired_refVelocity(obj)
             % Compute desired object velocity for cooperative manipulation
-            [v_ang, v_lin] = CartError(obj.wTt, obj.wTo);
+            [v_ang, v_lin] = CartError(obj.wTog, pinv(obj.wTt) * obj.wTo); 
 
             % Desired object velocity
             xdotbar = 0.2*[v_ang; v_lin];

@@ -44,7 +44,7 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.65, -0.35, 0.28]'; 0 0 0 1];
-%wTog=[rotation(0,0,0) [0.65, -0.35, 0]'; 0 0 0 1];
+% wTog=[rotation(0,0,0) [0.65, -0.35, 0]'; 0 0 0 1]; % to test joint limits task
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
