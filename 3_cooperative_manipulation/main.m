@@ -172,21 +172,6 @@ for t = 0:dt:end_time
         % Project onto feasible subspace (avoid internal forces)
         x_tilde_dot = Hab * (eye(12) - pinv(C)*C) * [x_hat_dot; x_hat_dot];
 
-        % Compute scaling factors for each robot
-        alpha_a = min(1, norm(x_dot_t_a) / (norm(x_tilde_dot(1:6)) + eps));
-        alpha_b = min(1, norm(x_dot_t_b) / (norm(x_tilde_dot(7:12)) + eps));
-
-        % Optional: stop if scaling is too small
-        if min(alpha_a, alpha_b) < 0.1
-            x_tilde_dot = zeros(12,1);
-        else
-            % Apply scaling separately
-            x_tilde_dot(1:6) = alpha_a * x_tilde_dot(1:6);
-            x_tilde_dot(7:12) = alpha_b * x_tilde_dot(7:12);
-        end
-
-
-
         % Set cooperative task reference
         coop_system.left_arm.xdot_coop  = x_tilde_dot(1:6);
         coop_system.right_arm.xdot_coop = x_tilde_dot(7:12);
