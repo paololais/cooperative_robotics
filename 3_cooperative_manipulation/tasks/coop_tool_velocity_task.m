@@ -13,14 +13,7 @@ classdef coop_tool_velocity_task < Task
         end
 
         function updateJacobian(obj, robot)
-            w_d_to = robot.wTt(1:3,1:3) * robot.tTo(1:3,4);
-            tS_objc = [eye(3), zeros(3,3);
-                      (skew(w_d_to)'), eye(3)];
-
-            tool_jacobian = robot.wJt;
-
-            obj.J = tS_objc * tool_jacobian;
-
+            obj.J = robot.wJo;
         end
 
         function updateActivation(obj, robot)

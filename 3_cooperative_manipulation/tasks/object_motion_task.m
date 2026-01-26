@@ -16,10 +16,14 @@ classdef object_motion_task < Task
             % Saturation
             obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.3);
             obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.3);
+            robot.xdot_des = obj.xdotbar;
         end
         
         function updateJacobian(obj, robot)
-            obj.J=robot.wJt;
+            if isempty(robot.wJo)
+                robot.update_obj_jacobian();
+            end
+            obj.J=robot.wJo;
         end
         
         function updateActivation(obj, robot)

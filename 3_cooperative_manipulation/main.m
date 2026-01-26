@@ -144,21 +144,18 @@ for t = 0:dt:end_time
         qr_dot = qr_dot_nc;
     
     elseif missionManager.missionPhase == 2
+        coop_system.left_arm.update_obj_jacobian();
+        coop_system.right_arm.update_obj_jacobian();
+
         % RIGID BODY CONSTRAINT
         % Reference generator: desired object twist
-
+        xdot_ref_l = coop_system.left_arm.xdot_des;
+        xdot_ref_r = coop_system.right_arm.xdot_des;
+        
         % 4. TO DO: COOPERATION hierarchy
         % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
-        xdot_ref_l = coop_system.left_arm.compute_desired_refVelocity();
-        xdot_ref_r = coop_system.right_arm.compute_desired_refVelocity();
-
-        % Share reference with both arms
-        coop_system.left_arm.xdot = xdot_ref_l;
-        coop_system.right_arm.xdot = xdot_ref_r;
-
-        % Compute non-cooperative tool velocities
-        x_dot_t_a = coop_system.left_arm.wJt * ql_dot_nc;
-        x_dot_t_b = coop_system.right_arm.wJt * qr_dot_nc;
+        x_dot_t_a = coop_system.left_arm.wJo * ql_dot_nc;
+        x_dot_t_b = coop_system.right_arm.wJo * qr_dot_nc;
 
         % Compute weights        
         mu_a = mu0 + norm(xdot_ref_l - x_dot_t_a);
@@ -174,6 +171,21 @@ for t = 0:dt:end_time
 
         % Project onto feasible subspace (avoid internal forces)
         x_tilde_dot = Hab * (eye(12) - pinv(C)*C) * [x_hat_dot; x_hat_dot];
+
+        % Compute scaling factors for each robot
+        alpha_a = min(1, norm(x_dot_t_a) / (norm(x_tilde_dot(1:6)) + eps));
+        alpha_b = min(1, norm(x_dot_t_b) / (norm(x_tilde_dot(7:12)) + eps));
+
+        % Optional: stop if scaling is too small
+        if min(alpha_a, alpha_b) < 0.1
+            x_tilde_dot = zeros(12,1);
+        else
+            % Apply scaling separately
+            x_tilde_dot(1:6) = alpha_a * x_tilde_dot(1:6);
+            x_tilde_dot(7:12) = alpha_b * x_tilde_dot(7:12);
+        end
+
+
 
         % Set cooperative task reference
         coop_system.left_arm.xdot_coop  = x_tilde_dot(1:6);

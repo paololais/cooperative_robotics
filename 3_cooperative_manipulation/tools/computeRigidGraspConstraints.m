@@ -5,8 +5,8 @@ function [Ha, Hb, C] = computeRigidGraspConstraints(armA, armB)
     % C: combined constraint matrix
 
     % Get Jacobians for both arms
-    Jt_A = armA.wJt;
-    Jt_B = armB.wJt;
+    Jt_A = armA.wJo;
+    Jt_B = armB.wJo;
 
     % Compute the constraint matrices
     Ha = Jt_A*pinv(Jt_A);

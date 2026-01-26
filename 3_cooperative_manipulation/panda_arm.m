@@ -9,6 +9,7 @@ classdef panda_arm < handle
         qdot
         xdot
         xdot_coop
+        xdot_des
         %% --- Geometry ---
         wTb
         %% --- Limits ---
@@ -104,18 +105,16 @@ classdef panda_arm < handle
         function compute_object_frame(obj)
             % Define the object frame as a rigid body attached to the tool frame
             obj.tTo = obj.wTt \ obj.wTo;  % tTo = wTt^-1 * wTo
-        end    
+        end
         
-        function [xdotbar] = compute_desired_refVelocity(obj)
-            % Compute desired object velocity for cooperative manipulation
-            [v_ang, v_lin] = CartError(obj.wTog, pinv(obj.wTt) * obj.wTo); 
-
-            % Desired object velocity
-            xdotbar = 0.2*[v_ang; v_lin];
-
-            % Saturation
-            xdotbar(1:3) = Saturate(xdotbar(1:3), 0.3);
-            xdotbar(4:6) = Saturate(xdotbar(4:6), 0.3);
+        function update_obj_jacobian(obj)
+            % Compute Differential kinematics from the base frame to the
+            % Object Frame
+            if isempty(obj.tTo)
+                obj.compute_object_frame();
+            end
+            Sto = [eye(3) zeros(3); -skew(obj.wTt(1:3,1:3)*obj.tTo(1:3,4)) eye(3)];
+            obj.wJo = Sto * obj.wJt;
         end
     end
 end
