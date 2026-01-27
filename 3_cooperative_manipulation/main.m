@@ -44,7 +44,7 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 %wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
-wTog=[rotation(0,0,0) [0.65, -0.35, 3.4]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.9, -0.95, 0.2]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -111,7 +111,7 @@ missionManager = MissionManager();
 missionManager.missionPhase = 1;
 
 % Initial bias for cooperation weights
-mu0 = 0.2;
+mu0 = 0.001;
 
 %Initiliaze robot interface
 robot_udp=UDP_interface(real_robot);
@@ -149,6 +149,7 @@ for t = 0:dt:end_time
 
         % RIGID BODY CONSTRAINT
         % Reference generator: desired object twist
+        % Computed in Object Motion Task
         xdot_ref_l = coop_system.left_arm.xdot_des;
         xdot_ref_r = coop_system.right_arm.xdot_des;
         
@@ -169,7 +170,7 @@ for t = 0:dt:end_time
         Hab = [Ha zeros(6)
               zeros(6) Hb];
 
-        % Project onto feasible subspace (avoid internal forces)
+        % Project onto feasible subspace
         x_tilde_dot = Hab * (eye(12) - pinv(C)*C) * [x_hat_dot; x_hat_dot];
 
         % Set cooperative task reference
@@ -194,8 +195,12 @@ for t = 0:dt:end_time
     robot_udp.send(t,coop_system)
 
     
-    if mod(coop_system.loopCounter, round(1 / coop_system.dt)) == 0
-        fprintf('t = %.2f s\n', coop_system.time);        
+    if mod(coop_system.loopCounter, round(0.3 / coop_system.dt)) == 0
+        fprintf('t = %.2f s\n', coop_system.time);
+        if missionManager.missionPhase == 2        
+        fprintf("left arm wTo, position: [%f, %f, %f]\n", coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
+        fprintf("right arm wTo, position: [%f, %f, %f]\n", coop_system.right_arm.wTo(1,4), coop_system.right_arm.wTo(2,4), coop_system.right_arm.wTo(3,4));
+        end
     end
 
     % 7. Logging
