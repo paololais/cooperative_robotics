@@ -43,9 +43,10 @@ arm1.setGoal(w_obj_pos, w_obj_ori, -arm_dist_offset, rotation(pi, -pi/9, 0));
 arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotation(0,0,pi));
 
 %Define Object goal frame (Cooperative Motion)
-%wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
-%wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
-wTog=[rotation(0,0,0) [0.9, -0.95, 0.2]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.6, 0.4, 0.1]'; 0 0 0 1];
+%wTog=[rotation(0,0,0) [0.6, 0.4, 3.48]'; 0 0 0 1];
+wTog=[rotation(0,0,0) [0.9, 0.4, 0]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -198,6 +199,7 @@ for t = 0:dt:end_time
     
     if mod(coop_system.loopCounter, round(0.3 / coop_system.dt)) == 0
         fprintf('t = %.2f s\n', coop_system.time);
+        fprintf('Left arm altitude: %.3f m, Right arm altitude: %.3f m\n', coop_system.left_arm.alt, coop_system.right_arm.alt);
         if missionManager.missionPhase == 2        
             fprintf("left arm wTo, position: [%f, %f, %f]\n", coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
             fprintf("right arm wTo, position: [%f, %f, %f]\n", coop_system.right_arm.wTo(1,4), coop_system.right_arm.wTo(2,4), coop_system.right_arm.wTo(3,4));

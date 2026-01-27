@@ -66,6 +66,7 @@ classdef panda_arm < handle
             obj.wTt = obj.wTe * obj.eTt;
 
             obj.xdot_coop = zeros(6,1);
+            obj.tTo = eye(4);
           
         end
 
@@ -89,7 +90,8 @@ classdef panda_arm < handle
             %TO DO: Update the transformation from world frame to Tool frame
             obj.wTt = obj.wTe*obj.eTt;
             obj.alt = obj.wTe(3,4); %Update altitude
-
+            
+            % Update object frame if in cooperative manipulation phase
             if missionPhase == 2
                 obj.wTo = obj.wTt * obj.tTo;
             end
@@ -111,9 +113,6 @@ classdef panda_arm < handle
         function update_obj_jacobian(obj)
             % Compute Differential kinematics from the base frame to the
             % Object Frame
-            if isempty(obj.tTo)
-                obj.compute_object_frame();
-            end
             Sto = [eye(3) zeros(3); -skew(obj.wTt(1:3,1:3)*obj.tTo(1:3,4)) eye(3)];
             obj.wJo = Sto * obj.wJt;
         end

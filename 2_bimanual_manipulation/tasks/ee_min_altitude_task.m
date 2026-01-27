@@ -16,7 +16,7 @@ classdef ee_min_altitude_task < Task
                 robot=robot_system.right_arm;    
             end
             
-            error = 0.15 - robot.alt; % minimum altitude = 0.15m
+            error = 0.2 - robot.alt; % minimum altitude = 0.15m
             obj.xdotbar = 1.0 * error;         
             % limit the requested velocities...
             obj.xdotbar = Saturate(obj.xdotbar, 1.0);

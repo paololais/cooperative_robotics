@@ -10,10 +10,10 @@ classdef ee_min_altitude_task < Task
         end
 
         function updateReference(obj, robot)                
-            error = 0.15 - robot.alt; % minimum altitude = 0.15m
-            obj.xdotbar = 1.0 * error;         
+            error = 0.2 - robot.alt;
+            obj.xdotbar = 1.5 * error;         
             % limit the requested velocities...
-            obj.xdotbar = Saturate(obj.xdotbar, 1.0);
+            obj.xdotbar = Saturate(obj.xdotbar, 1.5);
         end
 
         function updateJacobian(obj,robot)
