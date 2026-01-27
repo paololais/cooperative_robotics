@@ -13,7 +13,7 @@ classdef coop_tool_velocity_task < Task
         end
 
         function updateJacobian(obj, robot)
-            obj.J = robot.wJt;
+            obj.J = robot.wJo;
         end
 
         function updateActivation(obj, robot)

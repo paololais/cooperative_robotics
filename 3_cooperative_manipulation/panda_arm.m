@@ -81,7 +81,7 @@ classdef panda_arm < handle
         end
 
 
-        function update_transform(obj)
+        function update_transform(obj, missionPhase)
             % Compute forward kinematics of the robot
                 
             obj.bTe=getTransform(obj.robot_model.franka,[obj.q',0,0],'panda_link7');
@@ -89,7 +89,8 @@ classdef panda_arm < handle
             %TO DO: Update the transformation from world frame to Tool frame
             obj.wTt = obj.wTe*obj.eTt;
             obj.alt = obj.wTe(3,4); %Update altitude
-            if(~isempty(obj.tTo))
+
+            if missionPhase == 2
                 obj.wTo = obj.wTt * obj.tTo;
             end
         end

@@ -44,6 +44,7 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 %wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
+%wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
 wTog=[rotation(0,0,0) [0.9, -0.95, 0.2]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
@@ -128,7 +129,7 @@ for t = 0:dt:end_time
         coop_system.right_arm.q=qr;
     end
     % 2. Update Full kinematics of the bimanual system
-    coop_system.update_full_kinematics();
+    coop_system.update_full_kinematics(missionManager.missionPhase);
 
     % Update mission phase based on current actions and robot/object states
     missionManager.updateMissionPhase(actionManagerL, actionManagerR, coop_system);
@@ -198,19 +199,19 @@ for t = 0:dt:end_time
     if mod(coop_system.loopCounter, round(0.3 / coop_system.dt)) == 0
         fprintf('t = %.2f s\n', coop_system.time);
         if missionManager.missionPhase == 2        
-        fprintf("left arm wTo, position: [%f, %f, %f]\n", coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
-        fprintf("right arm wTo, position: [%f, %f, %f]\n", coop_system.right_arm.wTo(1,4), coop_system.right_arm.wTo(2,4), coop_system.right_arm.wTo(3,4));
+            fprintf("left arm wTo, position: [%f, %f, %f]\n", coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
+            fprintf("right arm wTo, position: [%f, %f, %f]\n", coop_system.right_arm.wTo(1,4), coop_system.right_arm.wTo(2,4), coop_system.right_arm.wTo(3,4));
         end
     end
 
     % 7. Logging
     % Update Left Logger (Pass Reference and Left Non-Coop Velocity)
-    logger_left.update(coop_system.time, coop_system.loopCounter, xdot_ref, x_dot_t_a);
+    logger_left.update(coop_system.time, coop_system.loopCounter, coop_system.left_arm.xdot_des, x_dot_t_a);
     
     % Update Right Logger (Pass Reference and Right Non-Coop Velocity)
-    logger_right.update(coop_system.time, coop_system.loopCounter, xdot_ref, x_dot_t_b);
+    logger_right.update(coop_system.time, coop_system.loopCounter, coop_system.right_arm.xdot_des, x_dot_t_b);
 
-    logger_left.updateDualArm(coop_system.time, coop_system.loopCounter, coop_system.left_arm, coop_system.right_arm, xdot_ref, x_dot_t_a);
+    logger_left.updateDualArm(coop_system.time, coop_system.loopCounter, coop_system.left_arm, coop_system.right_arm, coop_system.left_arm.xdot_des, x_dot_t_a);
     
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);

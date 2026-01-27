@@ -37,6 +37,8 @@ classdef MissionManager < handle
                     % Define the object frame at grasping point
                     coop_system.left_arm.compute_object_frame();
                     coop_system.right_arm.compute_object_frame();
+                    fprintf("left arm tTo, position: [%f, %f, %f]\n", coop_system.left_arm.tTo(1,4), coop_system.left_arm.tTo(2,4), coop_system.left_arm.tTo(3,4));
+                    fprintf("right arm tTo, position: [%f, %f, %f]\n", coop_system.right_arm.tTo(1,4), coop_system.right_arm.tTo(2,4), coop_system.right_arm.tTo(3,4));
 
                     % Store object pose for reference
                     obj_world_pose = coop_system.left_arm.wTo;

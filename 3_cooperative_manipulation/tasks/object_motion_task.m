@@ -23,7 +23,7 @@ classdef object_motion_task < Task
             if isempty(robot.wJo)
                 robot.update_obj_jacobian();
             end
-            obj.J=robot.wJt;
+            obj.J=robot.wJo;
         end
         
         function updateActivation(obj, robot)
