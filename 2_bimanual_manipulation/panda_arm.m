@@ -61,6 +61,7 @@ classdef panda_arm < handle
                        0            0         1     tool_length;
                        0            0         0     1];
             obj.wTt = obj.wTe * obj.eTt;
+            obj.tTo = eye(4);
         end
 
         function setGoal(obj,obj_position,obj_orientation,arm_dist_offset,arm_rot_offset)
@@ -75,13 +76,13 @@ classdef panda_arm < handle
         end
 
 
-        function update_transform(obj)
+        function update_transform(obj, missionPhase)
             % Compute forward kinematics of the robot
             obj.bTe=getTransform(obj.robot_model.franka,[obj.q',0,0],'panda_link7');
             obj.wTe=obj.wTb*obj.bTe;
             obj.wTt=obj.wTe*obj.eTt;
             obj.alt=obj.wTt(3,4); % update altitude
-            if(~isempty(obj.tTo))
+            if missionPhase == 2
                 obj.wTo = obj.wTt * obj.tTo;
             end
         end
@@ -96,6 +97,13 @@ classdef panda_arm < handle
         function compute_object_frame(obj)
             % Define the object frame as a rigid body attached to the tool frame
             obj.tTo = obj.wTt \ obj.wTo;  % tTo = wTt^-1 * wTo
+        end
+
+        function update_obj_jacobian(obj)
+            % Compute Differential kinematics from the base frame to the
+            % Object Frame
+            Sto = [eye(3) zeros(3); -skew(obj.wTt(1:3,1:3)*obj.tTo(1:3,4)) eye(3)];
+            obj.wJo = Sto * obj.wJt;
         end
     end
 end

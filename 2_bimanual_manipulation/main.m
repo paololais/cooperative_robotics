@@ -104,12 +104,12 @@ for t = 0:dt:end_time
         bm_sim.right_arm.q=qr;
     end
     
-    % 2. Update Full kinematics of the bimanual system
-    bm_sim.update_full_kinematics();
-  
     % Update Mission Phase based on current state
     missionManager.updateMissionPhase(actionManager, bm_sim);
     
+    % 2. Update Full kinematics of the bimanual system
+    bm_sim.update_full_kinematics(missionManager.missionPhase);
+      
     % 3. Compute control commands for current action
     [q_dot]=actionManager.computeICAT(bm_sim, dt);
 

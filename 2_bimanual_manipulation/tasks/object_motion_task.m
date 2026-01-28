@@ -32,7 +32,7 @@ classdef object_motion_task < Task
             elseif(obj.ID=='R')
                 robot=robot_system.right_arm;    
             end
-            tool_jacobian=robot.wJt;
+            tool_jacobian=robot.wJo;
             if obj.ID=='L'
                 obj.J=[tool_jacobian, zeros(6, 7)];
             elseif obj.ID=='R'
