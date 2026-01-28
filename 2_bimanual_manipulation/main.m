@@ -44,7 +44,7 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/6, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.65, -0.35, 0.28]'; 0 0 0 1];
-% wTog=[rotation(0,0,0) [0.65, -0.35, 0]'; 0 0 0 1]; % to test joint limits task
+% wTog=[rotation(0,0,0) [0.65, -0.35, 0]'; 0 0 0 1]; % to test joint limits and min altitude task
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 
@@ -120,7 +120,7 @@ for t = 0:dt:end_time
     robot_udp.send(t,bm_sim)
     
     % 6. Lggging
-    logger.update(bm_sim.time,bm_sim.loopCounter)
+    logger.update(bm_sim.time,bm_sim.loopCounter, missionManager.missionPhase)
     if mod(bm_sim.loopCounter, round(1 / bm_sim.dt)) == 0
         fprintf('t = %.2f s\n', bm_sim.time);
         if missionManager.missionPhase == 2

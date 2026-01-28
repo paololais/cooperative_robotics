@@ -21,6 +21,7 @@ classdef object_motion_task < Task
             % Saturation
             obj.xdotbar(1:3) = Saturate(obj.xdotbar(1:3), 0.5);
             obj.xdotbar(4:6) = Saturate(obj.xdotbar(4:6), 0.5);
+            robot.xdot_des = obj.xdotbar;
 
             robot.dist_to_goal=norm(v_lin);
             robot.rot_to_goal=norm(v_ang);

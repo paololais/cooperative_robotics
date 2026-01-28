@@ -7,7 +7,7 @@ addpath('./tasks')
 clc;clear;close all; 
 %Simulation Parameters
 dt = 0.005;
-end_time = 10;
+end_time = 12;
 % Initialize variables to avoid 'undefined' errors in Phase 1/3
 xdot_ref = zeros(6,1);
 x_dot_t_a = zeros(6,1);
@@ -44,9 +44,6 @@ arm2.setGoal(w_obj_pos, w_obj_ori, +arm_dist_offset, rotation(pi, pi/9, 0)*rotat
 
 %Define Object goal frame (Cooperative Motion)
 wTog=[rotation(0,0,0) [0.6, 0.4, 0.48]'; 0 0 0 1];
-wTog=[rotation(0,0,0) [0.6, 0.4, 0.1]'; 0 0 0 1];
-%wTog=[rotation(0,0,0) [0.6, 0.4, 3.48]'; 0 0 0 1];
-wTog=[rotation(0,0,0) [0.9, 0.4, 0]'; 0 0 0 1];
 arm1.set_obj_goal(wTog)
 arm2.set_obj_goal(wTog)
 

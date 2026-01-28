@@ -7,6 +7,7 @@ classdef panda_arm < handle
         %% --- State variables ---
         q
         qdot
+        xdot_des
         %% --- Geometry ---
         wTb
         %% --- Limits ---
@@ -62,6 +63,7 @@ classdef panda_arm < handle
                        0            0         0     1];
             obj.wTt = obj.wTe * obj.eTt;
             obj.tTo = eye(4);
+            obj.xdot_des = zeros(6,1);
         end
 
         function setGoal(obj,obj_position,obj_orientation,arm_dist_offset,arm_rot_offset)

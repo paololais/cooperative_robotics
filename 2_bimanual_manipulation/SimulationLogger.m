@@ -11,9 +11,11 @@ classdef SimulationLogger < handle
         action_set     % set of actions
         n
         dist_tools
-        vel_L_norm
-        vel_R_norm
-        vel_obj_ref_norm
+
+        xdot_desiredL
+        xdot_desiredR
+        xdot_actualL
+        xdot_actualR
     end
 
     methods
@@ -27,9 +29,12 @@ classdef SimulationLogger < handle
             obj.qr = zeros(7, maxLoops);
             obj.qdotr = zeros(7, maxLoops);
             obj.dist_tools = zeros(1, maxLoops);
-            obj.vel_L_norm = zeros(1, maxLoops);
-            obj.vel_R_norm = zeros(1, maxLoops);
-            obj.vel_obj_ref_norm = zeros(1, maxLoops);
+
+            obj.xdot_actualL = zeros(6, maxLoops);
+            obj.xdot_actualR = zeros(6, maxLoops);
+            obj.xdot_desiredL = zeros(6, maxLoops);
+            obj.xdot_desiredR = zeros(6, maxLoops);
+            
             obj.n=length(action_set.actions);
             l=zeros(1,obj.n);
             for i=1:obj.n
@@ -40,7 +45,7 @@ classdef SimulationLogger < handle
             
         end
 
-        function update(obj, t, loop)
+        function update(obj, t, loop, missionPhase)
             % Store robot state
             obj.t(loop) = t;
             obj.ql(:, loop) = obj.robot.left_arm.q;
@@ -50,19 +55,18 @@ classdef SimulationLogger < handle
 
             % 2. Metrics
             obj.dist_tools(loop) = norm(obj.robot.left_arm.wTt(1:3, 4) - obj.robot.right_arm.wTt(1:3, 4));
-
-            v_L = obj.robot.left_arm.wJt * obj.qdotl(:, loop);
-            v_R = obj.robot.right_arm.wJt * obj.qdotr(:, loop);
-            obj.vel_L_norm(loop) = norm(v_L(1:3));
-            obj.vel_R_norm(loop) = norm(v_R(1:3));
-            
-            
-            % 3. Reference
-            try
-                ref_vel = obj.xdotbar_task{idx_action, idx_task_obj, loop};
-                if ~isempty(ref_vel), obj.vel_obj_ref_norm(loop) = norm(ref_vel(4:6)); end
-            catch 
+            if missionPhase == 1
+                Jl = obj.robot.left_arm.wJt;
+                Jr = obj.robot.right_arm.wJt;
+            elseif missionPhase == 2 || missionPhase == 3
+                Jl = obj.robot.left_arm.wJo;
+                Jr = obj.robot.right_arm.wJo;
             end
+            obj.xdot_actualL(:,loop) = Jl * obj.robot.left_arm.qdot;
+            obj.xdot_actualR(:,loop) = Jr * obj.robot.right_arm.qdot;
+            obj.xdot_desiredL(:,loop) = obj.robot.left_arm.xdot_des;
+            obj.xdot_desiredR(:,loop) = obj.robot.right_arm.xdot_des;
+
             %Store task reference velocities
             for i=1:obj.n
                 for j=1:length(obj.action_set.actions{i})
@@ -116,15 +120,36 @@ classdef SimulationLogger < handle
             title('Distance between Tool Frames');
             yline(mean(obj.dist_tools(obj.t>2)), '--r');
 
-            %PLOT 5: Velocity Comparison (Standard)
-            figure('Name', 'Report: Velocity Comparison');
-            hold on;
-            plot(obj.t, obj.vel_obj_ref_norm, 'r', 'LineWidth', 2, 'DisplayName', 'Desired Obj Vel');
-            plot(obj.t, obj.vel_L_norm, 'b', 'LineWidth', 1.5, 'DisplayName', 'Left Tool Vel');
-            plot(obj.t, obj.vel_R_norm, 'g', 'LineWidth', 1.5, 'DisplayName', 'Right Tool Vel');
-            grid on; legend('Location','best');
-            xlabel('Time [s]'); ylabel('Velocity [m/s]');
-            title('Velocity Tracking Analysis');            
+            figure('Name', 'Velocity Comparison');            
+            titles = {'v_x [m/s]', 'v_y [m/s]', 'v_z [m/s]', ...
+                      '\omega_x [rad/s]', '\omega_y [rad/s]', '\omega_z [rad/s]'};
+            
+            for i = 1:6
+                subplot(3, 2, i);
+                hold on;
+                % 1. Desired Object Velocity (Reference)
+                h1 = plot(obj.t, obj.xdot_desiredL(i, :), 'g', 'LineWidth', 1.5);
+                
+                % 2. left arm
+                h2 = plot(obj.t, obj.xdot_actualL(i, :), 'r', 'LineWidth', 1.0);
+                
+                % 3. right arm
+                h3 = plot(obj.t, obj.xdot_actualR(i, :), 'b', 'LineWidth', 1.0);
+                
+                ylabel(titles{i});
+                if i > 4, xlabel('Time [s]'); end
+                grid on;
+                
+                % Add vertical bars/background to indicate Phase 2 (Cooperation)
+                % Assuming Phase 2 is roughly between t=2 and t=8 (adjust based on your sim)
+                % xline(2.0, '--k', 'Start Coop'); 
+                
+                if i == 2
+                    legend([h1, h2, h3], 'Desired (Ref)', 'left-arm', 'right-arm', ...
+                           'Location', 'bestoutside');
+                end
+            end
+            sgtitle('Velocity Comparison');
         end
     end
 end
