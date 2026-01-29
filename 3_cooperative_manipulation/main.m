@@ -15,6 +15,8 @@ end_time = 12;
 % Initialize variables to avoid 'undefined' errors in Phase 1/3
 x_dot_t_a = zeros(6,1);
 x_dot_t_b = zeros(6,1);
+x_dot_coop_a = zeros(6,1);
+x_dot_coop_b = zeros(6,1);
 % Initialize Franka Emika Panda Model
 model = load("panda.mat");
 
@@ -144,6 +146,12 @@ for t = 0:dt:end_time
         % Phase 1: just use non-cooperative velocities
         ql_dot = ql_dot_nc;
         qr_dot = qr_dot_nc;
+        % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
+        x_dot_t_a = coop_system.left_arm.wJt * ql_dot_nc;
+        x_dot_t_b = coop_system.right_arm.wJt * qr_dot_nc;
+        % Cooperative velocities for plotting (zeros in this phase)
+        x_dot_coop_a = zeros(6,1);
+        x_dot_coop_b = zeros(6,1);
     
     elseif missionManager.missionPhase == 2
         coop_system.left_arm.update_obj_jacobian();
@@ -183,12 +191,22 @@ for t = 0:dt:end_time
         % manager (with the constrained action to track the coop velocity)
         [ql_dot] = actionManagerL_coop.computeICAT(coop_system.left_arm, dt);
         [qr_dot] = actionManagerR_coop.computeICAT(coop_system.right_arm, dt);
+
+        % SAVE THE COOPERATIVE VELOCITIES COMPUTED
+        x_dot_coop_a = x_tilde_dot(1:6);
+        x_dot_coop_b = x_tilde_dot(7:12);
     
     elseif missionManager.missionPhase == 3
         % Phase 3: just use non-cooperative velocities
         ql_dot = ql_dot_nc;
-        qr_dot = qr_dot_nc;      
-    end  
+        qr_dot = qr_dot_nc;
+        % SAVE THE NON COOPERATIVE VELOCITIES COMPUTED
+        x_dot_t_a = coop_system.left_arm.wJt * ql_dot_nc;
+        x_dot_t_b = coop_system.right_arm.wJt * qr_dot_nc;
+        % Cooperative velocities for plotting (zeros in this phase)
+        x_dot_coop_a = zeros(6,1);
+        x_dot_coop_b = zeros(6,1);
+    end
 
     % 6. get the two variables for integration
     coop_system.sim(ql_dot,qr_dot);
@@ -198,8 +216,9 @@ for t = 0:dt:end_time
 
     
     if mod(coop_system.loopCounter, round(0.3 / coop_system.dt)) == 0
-        fprintf('t = %.2f s\n', coop_system.time);
+        fprintf('t = %.2f s\n', coop_system.time);        
         fprintf('Left arm altitude: %.3f m, Right arm altitude: %.3f m\n', coop_system.left_arm.alt, coop_system.right_arm.alt);
+        
         if missionManager.missionPhase == 2        
             fprintf("left arm wTo, position: [%f, %f, %f]\n", coop_system.left_arm.wTo(1,4), coop_system.left_arm.wTo(2,4), coop_system.left_arm.wTo(3,4));
             fprintf("right arm wTo, position: [%f, %f, %f]\n", coop_system.right_arm.wTo(1,4), coop_system.right_arm.wTo(2,4), coop_system.right_arm.wTo(3,4));
@@ -207,13 +226,13 @@ for t = 0:dt:end_time
     end
 
     % 7. Logging
-    % Update Left Logger (Pass Reference and Left Non-Coop Velocity)
-    logger_left.update(coop_system.time, coop_system.loopCounter, coop_system.left_arm.xdot_des, x_dot_t_a);
+    % Update Left Logger
+    logger_left.update(coop_system.time, coop_system.loopCounter, coop_system.left_arm.xdot_des, x_dot_coop_a, x_dot_t_a);
     
-    % Update Right Logger (Pass Reference and Right Non-Coop Velocity)
-    logger_right.update(coop_system.time, coop_system.loopCounter, coop_system.right_arm.xdot_des, x_dot_t_b);
+    % Update Right Logger
+    logger_right.update(coop_system.time, coop_system.loopCounter, coop_system.right_arm.xdot_des, x_dot_coop_b, x_dot_t_b);
 
-    logger_left.updateDualArm(coop_system.time, coop_system.loopCounter, coop_system.left_arm, coop_system.right_arm, coop_system.left_arm.xdot_des, x_dot_t_a);
+    logger_left.updateDualArm(coop_system.time, coop_system.loopCounter, coop_system.left_arm, coop_system.right_arm);
     
     % 8. Optional real-time slowdown
     SlowdownToRealtime(dt);

@@ -37,7 +37,7 @@ classdef SimulationLogger < handle
         end
 
         % Update function now requires extra arguments for the velocities
-        function update(obj, t, loop, xdot_ref, xdot_nc_val)
+        function update(obj, t, loop, xdot_ref, xdot_actual_val, xdot_nc_val)
             % Store basic robot state
             obj.t(loop) = t;
             obj.q(:, loop) = obj.robot.q;
@@ -49,17 +49,13 @@ classdef SimulationLogger < handle
             
             % Compute actual Cartesian velocity (J * qdot)
             % This represents the final Cooperative velocity executed by the robot
-            obj.xdot_actual(:, loop) = obj.robot.wJt * obj.robot.qdot;
+            obj.xdot_actual(:, loop) = xdot_actual_val;
         end
         
         % Update function for dual-arm scenarios to track tool distance
-        function updateDualArm(obj, t, loop, left_arm, right_arm, xdot_ref, xdot_nc_val)
+        function updateDualArm(obj, t, loop, left_arm, right_arm)
             % Store basic robot state
             obj.t(loop) = t;
-            
-            % Store velocity analysis data
-            obj.xdot_desired(:, loop) = xdot_ref;
-            obj.xdot_nc(:, loop) = xdot_nc_val;
             
             % Extract tool positions
             left_pos = left_arm.wTt(1:3, 4);   % Left tool position
