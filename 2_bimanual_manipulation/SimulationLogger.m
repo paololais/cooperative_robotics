@@ -100,6 +100,7 @@ classdef SimulationLogger < handle
             s=squeeze(obj.xdotbar_task(action,:,:));
             nt=length(task);
             title(strcat('Action Set'," ",num2str(action)));  
+            
             for i=1:nt
                 subplot(1,nt,i)
                 data=cell2mat(s(task(i),:));
@@ -118,7 +119,8 @@ classdef SimulationLogger < handle
             plot(obj.t, obj.dist_tools, 'LineWidth', 2);
             grid on; xlabel('Time [s]'); ylabel('Distance [m]');
             title('Distance between Tool Frames');
-            yline(mean(obj.dist_tools(obj.t>2)), '--r');
+            % yline(mean(obj.dist_tools(obj.t>2)), '--r');
+            xline(3.18, '--y', 'Start Coop'); 
 
             figure('Name', 'Velocity Comparison');            
             titles = {'v_x [m/s]', 'v_y [m/s]', 'v_z [m/s]', ...
@@ -134,7 +136,7 @@ classdef SimulationLogger < handle
                 h2 = plot(obj.t, obj.xdot_actualL(i, :), 'r', 'LineWidth', 1.0);
                 
                 % 3. right arm
-                h3 = plot(obj.t, obj.xdot_actualR(i, :), 'b', 'LineWidth', 1.0);
+                h3 = plot(obj.t, obj.xdot_actualR(i, :), 'w', 'LineWidth', 1.0);
                 
                 ylabel(titles{i});
                 if i > 4, xlabel('Time [s]'); end
@@ -142,7 +144,7 @@ classdef SimulationLogger < handle
                 
                 % Add vertical bars/background to indicate Phase 2 (Cooperation)
                 % Assuming Phase 2 is roughly between t=2 and t=8 (adjust based on your sim)
-                % xline(2.0, '--k', 'Start Coop'); 
+                xline(3.18, '--y', 'Start Coop'); 
                 
                 if i == 2
                     legend([h1, h2, h3], 'Desired (Ref)', 'left-arm', 'right-arm', ...
