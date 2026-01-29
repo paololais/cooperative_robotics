@@ -104,7 +104,7 @@ classdef SimulationLogger < handle
                 h2 = plot(obj.t, obj.xdot_nc(i, :), 'r', 'LineWidth', 1.0);
                 
                 % 3. Actual Cooperative Velocity - Blue
-                h3 = plot(obj.t, obj.xdot_actual(i, :), 'w', 'LineWidth', 1.2);
+                h3 = plot(obj.t, obj.xdot_actual(i, :), 'b', 'LineWidth', 1.2);
 
                 xline(3.71, '--y', 'Start Coop'); 
                 
@@ -127,7 +127,7 @@ classdef SimulationLogger < handle
         function plotToolDistance(obj)
             figure('Name', 'Tool-to-Tool Distance');
             
-            plot(obj.t, obj.tool_distance, 'w', 'LineWidth', 2);
+            plot(obj.t, obj.tool_distance, 'b', 'LineWidth', 2);
             xlabel('Time [s]');
             ylabel('Distance [m]');
             title('Distance Between Left and Right Tool End-Effectors');

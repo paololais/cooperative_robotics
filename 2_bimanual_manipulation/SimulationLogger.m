@@ -136,7 +136,7 @@ classdef SimulationLogger < handle
                 h2 = plot(obj.t, obj.xdot_actualL(i, :), 'r', 'LineWidth', 1.0);
                 
                 % 3. right arm
-                h3 = plot(obj.t, obj.xdot_actualR(i, :), 'w', 'LineWidth', 1.0);
+                h3 = plot(obj.t, obj.xdot_actualR(i, :), 'b', 'LineWidth', 1.0);
                 
                 ylabel(titles{i});
                 if i > 4, xlabel('Time [s]'); end
