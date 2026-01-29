@@ -1,3 +1,7 @@
+% Group Members:
+% Paolo Laishram - 4980065
+% Marcello Ori - 7694567
+
 % Add paths
 addpath('./simulation_scripts');
 addpath('./tools');
@@ -8,7 +12,7 @@ clc; clear; close all;
 
 % Simulation parameters
 dt       = 0.005;
-endTime  = 40;
+endTime  = 35;
 % Initialize robot model and simulator
 robotModel = UvmsModel();
 sim = UvmsSim(dt, robotModel, endTime);

@@ -118,6 +118,13 @@ classdef SimulationLogger < handle
             ylabel('Tool position error [m]');
             grid on;
             title('Tool position error');
+            
+            % minimum altitude task activation
+            figure(8);
+            plot(obj.t, squeeze(obj.a(:, :, 1))', 'LineWidth', 1);
+            xlabel('Time [s]');
+            grid on;
+            title('Minimum Altitude Task activation');
         end
     end
 end

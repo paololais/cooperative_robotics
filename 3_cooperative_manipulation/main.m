@@ -1,3 +1,7 @@
+% Group Members:
+% Paolo Laishram - 4980065
+% Marcello Ori - 7694567
+
 function main()
 %Add path
 addpath('./simulation_scripts');
@@ -9,7 +13,6 @@ clc;clear;close all;
 dt = 0.005;
 end_time = 12;
 % Initialize variables to avoid 'undefined' errors in Phase 1/3
-xdot_ref = zeros(6,1);
 x_dot_t_a = zeros(6,1);
 x_dot_t_b = zeros(6,1);
 % Initialize Franka Emika Panda Model
@@ -98,11 +101,11 @@ disp(actionManagerR.actionsName);
 % cooperative action manager for both arms during Cooperative Manipulation action
 % same tasks but with the cooperative tool velocity task with top priority
 actionManagerL_coop = ActionManager();
-actionManagerL_coop.addAction({coop_tool_velocity_L, ee_alt_L, jl_L, object_task_L}, "feasible vel Left");
+actionManagerL_coop.addAction({coop_tool_velocity_L, ee_alt_L, jl_L, object_task_L}, "Feasible Vel Left");
 actionManagerL_coop.addUnifyingTaskList({coop_tool_velocity_L, ee_alt_L, jl_L, object_task_L});
 
 actionManagerR_coop = ActionManager();
-actionManagerR_coop.addAction({coop_tool_velocity_R, ee_alt_R, jl_R, object_task_R}, "feasible vel Right");
+actionManagerR_coop.addAction({coop_tool_velocity_R, ee_alt_R, jl_R, object_task_R}, "Feasible Vel Right");
 actionManagerR_coop.addUnifyingTaskList({coop_tool_velocity_R, ee_alt_R, jl_R, object_task_R});
 
 % Track mission phases

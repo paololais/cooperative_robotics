@@ -1,3 +1,7 @@
+% Group Members:
+% Paolo Laishram - 4980065
+% Marcello Ori - 7694567
+
 function main()
 %Add path
 addpath('./simulation_scripts');
@@ -69,13 +73,12 @@ stop_velocities_task_R = stop_velocities_task("R","STOP_VEL_R");
 %Actions for each phase: go to phase, coop_motion phase, end_motion phase
 go_to = {ee_alt_L, ee_alt_R, jl_L, jl_R, left_tool_task, right_tool_task};
 bimanual_manipulation = {rigid_constraint, ee_alt_L, ee_alt_R, jl_L, jl_R, object_task_l, object_task_r};
-% bimanual_manipulation = {ee_alt_L, ee_alt_R, jl_L, jl_R, object_task_l, object_task_r};
-stop_motion = {ee_alt_L, ee_alt_R, stop_velocities_task_R, stop_velocities_task_L};
+stop_motion = {ee_alt_L, ee_alt_R, stop_velocities_task_L, stop_velocities_task_R};
 
 % Unifying task list
 unified_task_list = {rigid_constraint, ee_alt_L, ee_alt_R, jl_L, jl_R, ...
-                     left_tool_task, right_tool_task, object_task_l, object_task_r, ...
-                     stop_velocities_task_R, stop_velocities_task_L};
+                    stop_velocities_task_L, stop_velocities_task_R, ...
+                    left_tool_task, right_tool_task, object_task_l, object_task_r};
 %Load Action Manager Class and load actions
 actionManager = ActionManager();
 actionManager.addAction(go_to, "Go To Position");
