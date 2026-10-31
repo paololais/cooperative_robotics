@@ -9,6 +9,7 @@ The project explores hierarchical control, robotic manipulation, and coordinatio
 The project is organized into three exercises:
 
 ### 1. Underwater Vehicle Navigation and Manipulation
+<img src="images/robust-rov.png" width="600">
 
 Implementation of a complete mission involving an underwater vehicle equipped with a robotic manipulator.
 
@@ -22,6 +23,7 @@ A workspace-based reachability check is used to adjust the vehicle's landing pos
 The control architecture uses hierarchical tasks, including vehicle position and orientation control, safety constraints, target alignment, and end-effector positioning.
 
 ### 2. Bimanual Manipulation
+<img src="images/franka.png" width="600">
 
 Implementation of a task-priority inverse kinematics (TPIK) controller for two Franka Panda manipulators treated as a single robotic system.
 
